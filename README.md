@@ -48,17 +48,25 @@ The default mode when launched is manual mode, which allows you to control the r
  * r
   * Revert to last freq/mode
  * q
-  * Exit automatic mode or exit
+  * Exit
  * lock
   * Lock to current frequency and mode
  * unlock
   * Unlock
  * s####-####
-  * Scan from frequency from BOTTOM to TOP, ie:  s7100-7300
+  * Scan a range of frequencies, ie:  s7100-7300
  * ?
   * Help
  * ??
   * Automatic mode help
+
+### Automatic mode
+
+When in automatic mode the prompt refreshes constantly to show the current frequency, signal strength, mode, VFO used, and lock status.  As you change bands it will automatically switch the mode to LSB or USB based on the frequency, as well as warn you if you are out of band and will show your tuner settings for the current frequency range.
+
+Automatic mode also has a number of key commands that will let you change the frequency or initiate scan mode so you can control your radio entirely from the keyboard.
+
+You can control if the script automatically switches between CW and Phone modes or if it only controls LSB/USB switches or disable automatic modes altogether.  This behavior can be controlled by setting variables at the top of the script.
 
 ### Automatic mode commands
 
@@ -88,21 +96,13 @@ In manual mode, you may combine multiple commands into one, such as:
   * Note that by default, 7188 would be LSB, but since specified, it will use USB
   * Not specifying the mode will automatically pick LSB or USB
 
-### Automatic mode
-
-When in automatic mode the prompt refreshes constantly to show the current frequency, signal strength, mode, VFO used, and lock status.  As you change bands it will automatically switch the mode to LSB or USB based on the frequency, as well as warn you if you are out of band and will show your tuner settings for the current frequency range.
-
-Automatic mode also has a number of key commands that will let you change the frequency or initiate scan mode so you can control your radio entirely from the keyboard.
-
-You can control if the script automatically switches between CW and Phone modes or if it only control LSB/USB switches or disable automatic modes altogether by setting variables at the top of the script.
-
 ### Scan mode
 
 When initiated from Manual mode, the scan mode simply scans from the bottom frequency given to the top frequency given and when it reaches the boundary it reverses and scans down the band.  The same is true when scanning down; when the bottom boundary is hit it will scan back up the band again.  Example:  s7100-7300 will scan from 7100kHz to 7300kHz, starting at 7100kHz.
 
 When initiated from Automatic mode it will scan from the current frequency until it reaches the band edge for your privileges, at which time the scan direction will reverse.  If the scan is initiated outside of your allowed band allocation, the scan will continue until stopped to allow for scanning on other non-amateur bands.
 
-Both modes can be interrupted by pressing any key which provides input to the script, such as the space bar.
+Both modes scan until they are interrupted by pressing any key which provides input to the script, such as the space bar.
 
 ### VFO A/B and Revert
 
@@ -110,7 +110,7 @@ By using VFO A and B as well as the Revert command, you can flip between differe
 
 The revert command will let you flip between the current and previous frequency, such as in this example.
 
-You're on 28450kHz and you see a DX spot on 28400, you can type f28400 (or just 28400) and listen.  If you want to return to your previous frequency, you can just type _r_ to revert back.  You may flip back and forth this way as much as you like.
+You're on 28450kHz and you see a DX spot on 28400, you can type f28400 (or just 28400) and listen.  If you want to return to your previous frequency, you can just type **_r_** to revert back.  You may flip back and forth this way as much as you like.
 
 ### Band privileges
 
@@ -130,7 +130,7 @@ The variables which control the script defaults and initialization are at the to
 
 ### Command Line Arguments
 
-You may specify _auto_ as the first command line argument to go directly into Automatic mode.
+You may specify **_auto_** as the first command line argument to go directly into Automatic mode.
 
 ### Todo
 
