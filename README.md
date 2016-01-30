@@ -116,7 +116,7 @@ You're on 28450kHz and you see a DX spot on 28400, you can type f28400 (or just 
 
 ### Repeat Last Command
 
-The ! command in Manual mode will repeat the last command, most useful for if you're scanning and you want to stop to check out a possible signal, but keep scanning.
+The ! command in Manual mode will repeat the last command, most useful for if you're scanning and you want to stop to check out a possible signal, but keep scanning.  Only stores scanning and frequency changing commands in Manual mode.
 
 ### Band privileges
 

@@ -264,9 +264,7 @@ sub parse_input()
 {
 	my ($input) = (@_);
 
-	# Store our last command for our ! repeat command
-	my $tmplastinput = $lastinput;
-	$lastinput = $input;
+	my $storelastinput = 0;
 
 	# Get current info so we can switch back to these if we change with 'r'
 	my $f = $rig->get_freq();
@@ -277,7 +275,8 @@ sub parse_input()
 
 	if ($input eq "!")
 	{
-		$input = $tmplastinput;
+		$input = $lastinput;
+		print "Repeating command:  " . $lastinput . "\n";
  	}
 
 	# Help
@@ -350,6 +349,7 @@ sub parse_input()
 	if ($input =~ /f/ || $input =~ /^[0-9\.]+$/ )
 	{
 		parse_f($input);
+		$storelastinput++;
 	}
 
 	# Parse and change mode
@@ -361,13 +361,15 @@ sub parse_input()
 	# Scan up
 	if ($input =~ /sup/)
 	{
-		scan($f/1000,0,0,"up");
+		scan($f/1000,0,"up");
+		$storelastinput++;
 	}
 
 	# Scan down
 	if ($input =~ /sdown/)
 	{
-		scan($f/1000,0,0,"down");
+		scan($f/1000,0,"down");
+		$storelastinput++;
 	}
 
 	# Scan down
@@ -378,6 +380,7 @@ sub parse_input()
 		if ($bottom =~ /\d+/ && $top =~ /\d+/ && ($top > $bottom))
 		{
 			scan($bottom,$top,"");
+			$storelastinput++;
 		}
 		else
 		{
@@ -390,6 +393,12 @@ sub parse_input()
 	{
 		$quickfreq = $f / 1000;
 		$quickmode = $textmode;
+	}
+
+	# Store our last command for our ! repeat command if we passed a valid command
+	if ($storelastinput)
+	{
+		$lastinput = $input;
 	}
 }       
 
