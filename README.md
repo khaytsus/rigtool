@@ -55,6 +55,8 @@ The default mode when launched is manual mode, which allows you to control the r
   * Unlock
  * s####-####
   * Scan a range of frequencies, ie:  s7100-7300
+ * !
+  * Repeat last command
  * ?
   * Help
  * ??
@@ -111,6 +113,10 @@ By using VFO A and B as well as the Revert command, you can flip between differe
 The revert command will let you flip between the current and previous frequency, such as in this example.
 
 You're on 28450kHz and you see a DX spot on 28400, you can type f28400 (or just 28400) and listen.  If you want to return to your previous frequency, you can just type **_r_** to revert back.  You may flip back and forth this way as much as you like.
+
+### Repeat Last Command
+
+The ! command in Manual mode will repeat the last command, most useful for if you're scanning and you want to stop to check out a possible signal, but keep scanning.
 
 ### Band privileges
 

@@ -68,6 +68,9 @@ our $lastmode = "";
 # Keep track of last vfo used so we can use it again
 our $lastvfo = "";
 
+# Keep track of our last input so we can use a repeat command later
+our $lastinput;
+
 # Check to see if we have the Term::ANSIColor module so it's not a hard requirement
 our $ansi = eval
 {
@@ -261,10 +264,21 @@ sub parse_input()
 {
 	my ($input) = (@_);
 
+	# Store our last command for our ! repeat command
+	my $tmplastinput = $lastinput;
+	$lastinput = $input;
+
 	# Get current info so we can switch back to these if we change with 'r'
 	my $f = $rig->get_freq();
 	my ($mode, $width) = $rig->get_mode();
 	my ($textmode,@rest) = split('',Hamlib::rig_strrmode($mode));
+
+	# Repeat last command
+
+	if ($input eq "!")
+	{
+		$input = $tmplastinput;
+ 	}
 
 	# Help
 	if ($input =~ /\?+/)
@@ -1034,6 +1048,7 @@ auto - Switch to autotune mode
    b - Switch to VFO B
    r - Revert to last freq/mode
    q - Exit autotune mode or exit
+   ! - Repeat last command
    ? - Help
   ?? - Auto mode help
 lock - Lock to current freq/mode
