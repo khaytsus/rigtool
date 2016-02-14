@@ -76,9 +76,9 @@ Automatic mode shows in real-time your radio settings and extra information, but
 
  * l/u
   * Lock/Unlock frequency/mode
- * Cursor up/down
+ * Cursor left/right
   * Change frequency +/- 10hz
- * Cursor right/left
+ * Cursor up/down
   * Change frequency +/- 1khz
  * Page up/down
   * Change frequency +/- 10khz

@@ -452,31 +452,32 @@ sub auto_mode
 		# Process arrow keys, dunno why I can't seem to read the whole input
 		# so just look for what the ANSI code has in it
 		my $tmpf = $f / 1000;
-		# Up; Up 10hz
-		if ($char =~ /A/)
+
+		# Right; Up 10hz
+		if ($char =~ /C/)
 		{
 			$tmpf += .1;
 			parse_f($tmpf);
 		}
 
-		# Down; Down 10hz
-		if ($char =~ /B/)
+		# Left; Down 10hz
+		if ($char =~ /D/)
 		{
 			$tmpf -= .1;
 			parse_f($tmpf);
 		}
 
-		# Left; Down 1khz
-		if ($char =~ /D/)
+		# Up; Up 1khz
+		if ($char =~ /A/)
 		{
-			$tmpf -= 1;
+			$tmpf += 1;
 			parse_f($tmpf);
 		}
 
-		# Right; Up 1khz
-		if ($char =~ /C/)
+		# Down; Down 1khz
+		if ($char =~ /B/)
 		{
-			$tmpf += 1;
+			$tmpf -= 1;
 			parse_f($tmpf);
 		}
 
@@ -1013,17 +1014,13 @@ sub get_bandplan
 	'3535000-3600000' => 'L 3.8 4.5', # 80m
 	'3700000-3900000' => 'Direct', # 80m
 	'3900000-4000000' => 'L 3.0 4.0', # 80m
-	'5330500' => 'K 2.9 1.0', # 60m
-	'5346500' => 'K 2.9 1.0', # 60m
-	'5357000' => 'K 2.9 1.0', # 60m
-	'5371500' => 'K 2.9 1.0', # 60m
-	'5403500' => 'K 2.9 1.0', # 60m
+	'5330500-5403500' => 'K 2.9 1.0', # 60m
 	'7025000-7125000' => 'I 1.2 5.0', # 40m
 	'7125000-7180000' => 'I 2.2 4.9', # 40m
 	'7180000-7220000' => 'I 2.1 4.2', # 40m
 	'7220000-7300000' => 'I 2.1 4.0', # 40m
 	'10100000-10150000' => 'G 2.8 4.0', # 30m
-	'14025000-14150000' => 'B 2.8 -2.8', # 20m
+	'14025000-14150000' => 'C 2.8 -2.8', # 20m
 	'14175000-14350000' => 'Direct/Tuned', # 20m
 	'18068000-18168000' => 'C 2.0 0.5', # 17m
 	'21025000-21200000' => 'B 1.2 3.9', # 15m
@@ -1078,8 +1075,8 @@ Auto mode commands
 q - Exit auto mode
 l - Lock frequency/mode
 u - Unlock
-Cursor up/down - +/- 10hz
-Cursor right/left - +/- 1khz
+Cursor up/down - +/- 1khz
+Cursor right/left - +/- 10hz
 Page up/down - +/- 10khz
 Home up/down - Scan up/down
 END
@@ -1158,7 +1155,7 @@ sub rigopen
 {
 	if ($rigopens > 25)
 	{
-		$whileloop = 0;
+		#$whileloop = 0;
 		$autoloop = 0;
 	}
 	$rigopens++;
