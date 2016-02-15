@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+# Perl script to control a radio using HamLib
+
 use Hamlib;
 use Term::ReadKey;
 use Switch;
@@ -156,11 +158,11 @@ sub freq_text {
         rigopen();
     }
 
-    foreach (@cwfreqs) {
+    foreach my $item (@cwfreqs) {
 
         # Test if we have a range
-        if ( $_ =~ /-/ ) {
-            my ( $low, $high ) = split( '-', $_ );
+        if ( $item =~ /-/ ) {
+            my ( $low, $high ) = split( '-', $item );
             if ( $f >= $low && $f < $high ) {
                 $cwmatch = 1;
             }
@@ -169,17 +171,17 @@ sub freq_text {
 
             # Single frequency; ie:  60M
         {
-            if ( $f == $_ ) {
+            if ( $f == $item ) {
                 $cwmatch = 1;
             }
         }
     }
 
-    foreach (@datafreqs) {
+    foreach my $item (@datafreqs) {
 
         # Test if we have a range
-        if ( $_ =~ /-/ ) {
-            my ( $low, $high ) = split( '-', $_ );
+        if ( $item =~ /-/ ) {
+            my ( $low, $high ) = split( '-', $item );
             if ( $f >= $low && $f < $high ) {
                 $datamatch = 1;
             }
@@ -188,17 +190,17 @@ sub freq_text {
 
             # Single frequency; ie:  60M
         {
-            if ( $f == $_ ) {
+            if ( $f == $item ) {
                 $datamatch = 1;
             }
         }
     }
 
-    foreach (@ssbfreqs) {
+    foreach my $item (@ssbfreqs) {
 
         # Test if we have a range
-        if ( $_ =~ /-/ ) {
-            my ( $low, $high ) = split( '-', $_ );
+        if ( $item =~ /-/ ) {
+            my ( $low, $high ) = split( '-', $item );
             if ( $f >= $low && $f < $high ) {
                 $ssbmatch = 1;
             }
@@ -207,7 +209,7 @@ sub freq_text {
 
             # Single frequency; ie:  60M
         {
-            if ( $f == $_ ) {
+            if ( $f == $item ) {
                 $ssbmatch = 1;
             }
         }
@@ -1070,8 +1072,8 @@ sub average {
 
     if ( $avgtimes >= $avgsamples ) {
         my $sum;
-        foreach (@array) {
-            $sum += $_;
+        foreach my $item (@array) {
+            $sum += $item;
         }
         $avgtimes = 0;
         $signal   = int( $sum / @array + .5 );
