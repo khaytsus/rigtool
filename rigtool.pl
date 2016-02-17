@@ -5,9 +5,7 @@
 use Hamlib;
 use Term::ReadKey;
 use strict;
-
-# I have some quirky business with $char in auto_mode() to figure out before I can enable warnings
-#use warnings;
+use warnings;
 
 our $VERSION = 1.1;
 
@@ -28,6 +26,10 @@ my $data_passband = '3000';
 my $ssb_passband  = '3000';
 my $am_passband   = '6000';
 
+# If your radio offsets when it switches between CW and SSB, you can set that here
+# or set it to 0 if you don't want the script twiddling this on CW/SSB transitions
+my $cwoffset = 700;
+
 # If set to 1, execute auto_mode_set on manual frequency change.  cw/ssb switch
 # depends on $allmodeset setting
 my $fautomodeset = '1';
@@ -35,7 +37,7 @@ my $fautomodeset = '1';
 # If set to 0, do not switch between cw and ssb, but still sets lsb/usb
 # 1 executes auto_mode_set and switches beween cw and ssb as well as sets lsb/usb
 # and in the future perhaps data modes as well
-my $allmodeset = '1';
+my $allmodeset = '0';
 
 # Average the last N signals or not
 my $avgsignal = '1';
@@ -256,7 +258,7 @@ sub freq_text {
         $pretty_freq = $pretty_freq . '.00';
     }
     my $outofband = 0;
-    unless ( $matched || $license eq '' ) { $outofband = '1'; }
+    unless ( $matched || !defined($license) ) { $outofband = '1'; }
 
     return (
         $pretty_freq, $cwmatch,   $datamatch,
@@ -371,11 +373,15 @@ sub parse_input {
         $storelastinput++;
     }
 
-    # Scan down
-    if ( $input =~ /s\d+-\d+/xms ) {
+    # Scan range
+    if ( $input =~ /s\ +\d+\-\d+/xms ) {
         my ( $bottom, $top ) = split( /-/xms, $input );
         $bottom =~ s/s//;
         if ( $bottom =~ /\d+/xms && $top =~ /\d+/xms && ( $top > $bottom ) ) {
+
+            # Trim any whitespace out
+            $bottom =~ s/^\s+|\s+$//g;
+            $top =~ s/^\s+|\s+$//g;
             scan( $bottom, $top, '' );
             $storelastinput++;
         }
@@ -426,75 +432,79 @@ sub auto_mode {
         print $cl . $tunertext . ' ' . $extratext . "\n";
         print $cl . $prompt . "\r";
 
-        # Exit
-        if ( $char eq 'q' ) { $autoloop = 0; }
+        if ( defined($char) ) {
 
-        # Enable lock mode
-        if ( $char eq 'l' ) {
+            # Exit
+            if ( $char eq 'q' ) { $autoloop = 0; }
 
-            # Lock to current freq/mode
-            $locked    = 1;
-            $quickfreq = $f / $freqdiv;
-            $quickmode = $textmode;
-        }
+            # Enable lock mode
+            if ( $char eq 'l' ) {
 
-        # Disable lock mode
-        if ( $char eq 'u' ) {
-            $locked = 0;
-        }
+                # Lock to current freq/mode
+                $locked    = 1;
+                $quickfreq = $f / $freqdiv;
+                $quickmode = $textmode;
+            }
 
-        # Process arrow keys, dunno why I can't seem to read the whole input
-        # so just look for what the ANSI code has in it
-        my $tmpf = $f / $freqdiv;
+            # Disable lock mode
+            if ( $char eq 'u' ) {
+                $locked = 0;
+            }
 
-        # Right; Up 10hz
-        if ( $char =~ /C/xms ) {
-            $tmpf += .1;
-            parse_f($tmpf);
-        }
+          # Process arrow keys, dunno why I can't seem to read the whole input
+          # so just look for what the ANSI code has in it
+            my $tmpf = $f / $freqdiv;
 
-        # Left; Down 10hz
-        if ( $char =~ /D/xms ) {
-            $tmpf -= .1;
-            parse_f($tmpf);
-        }
+            # Right; Up 10hz
+            if ( $char =~ /C/xms ) {
+                $tmpf += .1;
+                parse_f($tmpf);
+            }
 
-        # Up; Up 1khz
-        if ( $char =~ /A/xms ) {
-            $tmpf += 1;
-            parse_f($tmpf);
-        }
+            # Left; Down 10hz
+            if ( $char =~ /D/xms ) {
+                $tmpf -= .1;
+                parse_f($tmpf);
+            }
 
-        # Down; Down 1khz
-        if ( $char =~ /B/xms ) {
-            $tmpf -= 1;
-            parse_f($tmpf);
-        }
+            # Up; Up 1khz
+            if ( $char =~ /A/xms ) {
+                $tmpf += 1;
+                parse_f($tmpf);
+            }
 
-        # Page Up; up 10khz
-        if ( $char =~ /5/xms ) {
-            $tmpf += 10;
-            parse_f($tmpf);
-        }
+            # Down; Down 1khz
+            if ( $char =~ /B/xms ) {
+                $tmpf -= 1;
+                parse_f($tmpf);
+            }
 
-        # Page Down; down 10khz
-        if ( $char =~ /6/xms ) {
-            $tmpf -= 10;
-            parse_f($tmpf);
-        }
+            # Page Up; up 10khz
+            if ( $char =~ /5/xms ) {
+                $tmpf += 10;
+                parse_f($tmpf);
+            }
 
-        # Home; scan up.    I see 1 in screen, 7 outside, no idea why
-        if ( $char =~ /1/xms || $char =~ /7/xms ) {
-            scan( $tmpf, 0, 'up' );
-        }
+            # Page Down; down 10khz
+            if ( $char =~ /6/xms ) {
+                $tmpf -= 10;
+                parse_f($tmpf);
+            }
 
-        # End; scan down.  I see 4 in screen, 8 outside, no idea why
-        if ( $char =~ /4/xms || $char =~ /8/xms ) {
-            scan( $tmpf, 0, 'down' );
-        }
+            # Home; scan up.    I see 1 in screen, 7 outside, no idea why
+            if ( $char =~ /1/xms || $char =~ /7/xms ) {
+                scan( $tmpf, 0, 'up' );
+            }
 
-        if ($char) {
-            select( undef, undef, undef, .1 );
+            # End; scan down.  I see 4 in screen, 8 outside, no idea why
+            if ( $char =~ /4/xms || $char =~ /8/xms ) {
+                scan( $tmpf, 0, 'down' );
+            }
+
+            if ($char) {
+                select( undef, undef, undef, .1 );
+            }
+
         }
 
         # Return to our locked freq/mode if locked
@@ -535,7 +545,7 @@ sub scan {
     }
 
     print "\033[2J";
-    while ( $scanchar eq '' ) {
+    while ( defined($scanchar) && $scanchar eq "" ) {
 
         # If we're in range scan mode, check boundaries
         if ($top) {
@@ -571,6 +581,11 @@ sub scan {
         ReadMode('cbreak');
         $scanchar = ReadKey(-1);
 
+        # We need this defined, so if it's not, make it so
+        if ( !defined($scanchar) ) {
+            $scanchar = '';
+        }
+
         # We need about 3 loops before we flush the char buffer
         if ( $loops < 3 ) { $scanchar = ''; }
         if ( $direction eq 'up' ) { $f += 1; }
@@ -581,12 +596,15 @@ sub scan {
         # Every 10 loops, update the prompt
         if ( $loops % 10 ) {
             my ( $prompt, $tunertext, $extratext ) = create_prompt();
+
             print "\033[0;0H";
+            print "\n";
             print $cl . $tunertext . ' ' . $extratext . "\n";
             print $cl . $prompt . "\r";
         }
     }
     ReadMode('normal');
+
     print "\033[2J";
     $scanmode = 0;
 
@@ -612,7 +630,10 @@ sub create_prompt {
     if ($locked) { $lockstatus = $c_r . 'L'; }
 
     if ($scanmode) {
-        $extra = '(Scanning) ' . $extra;
+        if ( defined($extra) ) {
+            $extra = '(Scanning) ' . $extra;
+        }
+        else { $extra = '(Scanning)'; }
     }
 
     if ($outofband) {
@@ -663,7 +684,7 @@ sub auto_mode_set {
 
             # Kludge to keep us on the same frequency we just tuned to
             my $freq = $rig->get_freq();
-            $freq += 700;
+            $freq += $cwoffset;
             my $vfo = $rig->get_vfo();
             if ( $vfo == 1 ) {
                 $rig->set_freq( $Hamlib::RIG_VFO_A, $freq );
@@ -703,7 +724,7 @@ sub auto_mode_set {
 
                 # Kludge to keep us on the same frequency we just tuned to
                 my $freq = $rig->get_freq();
-                $freq -= 700;
+                $freq -= $cwoffset;
                 my $vfo = $rig->get_vfo();
                 if ( $vfo == 1 ) {
                     $rig->set_freq( $Hamlib::RIG_VFO_A, $freq );
