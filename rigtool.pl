@@ -53,6 +53,14 @@ my $showtuneinfo = '1';
 # How many times can we fail opening the port before we give up?
 my $rigopenmax = '25';
 
+# Step sizes for cursor keys in auto mode
+my $hzstep = '0.1';
+my $khzstep = '1.0';
+my $largestep = '10';
+
+# Step size for can mode
+my $scanstep = '2.0';
+
 # Don't touch below here unless modifying %tuneinfo
 # if you want to modify that
 
@@ -374,7 +382,7 @@ sub parse_input {
     }
 
     # Scan range
-    if ( $input =~ /s\ +\d+\-\d+/xms ) {
+    if ( $input =~ /s\ *\d+\-\d+/xms ) {
         my ( $bottom, $top ) = split( /-/xms, $input );
         $bottom =~ s/s//;
         if ( $bottom =~ /\d+/xms && $top =~ /\d+/xms && ( $top > $bottom ) ) {
@@ -457,37 +465,37 @@ sub auto_mode {
 
             # Right; Up 10hz
             if ( $char =~ /C/xms ) {
-                $tmpf += .1;
+                $tmpf += $hzstep;
                 parse_f($tmpf);
             }
 
             # Left; Down 10hz
             if ( $char =~ /D/xms ) {
-                $tmpf -= .1;
+                $tmpf -= $hzstep;
                 parse_f($tmpf);
             }
 
             # Up; Up 1khz
             if ( $char =~ /A/xms ) {
-                $tmpf += 1;
+                $tmpf += $khzstep;
                 parse_f($tmpf);
             }
 
             # Down; Down 1khz
             if ( $char =~ /B/xms ) {
-                $tmpf -= 1;
+                $tmpf -= $khzstep;
                 parse_f($tmpf);
             }
 
             # Page Up; up 10khz
             if ( $char =~ /5/xms ) {
-                $tmpf += 10;
+                $tmpf += $largestep;
                 parse_f($tmpf);
             }
 
             # Page Down; down 10khz
             if ( $char =~ /6/xms ) {
-                $tmpf -= 10;
+                $tmpf -= $largestep;
                 parse_f($tmpf);
             }
 
@@ -588,8 +596,8 @@ sub scan {
 
         # We need about 3 loops before we flush the char buffer
         if ( $loops < 3 ) { $scanchar = ''; }
-        if ( $direction eq 'up' ) { $f += 1; }
-        if ( $direction eq 'down' ) { $f -= 1; }
+        if ( $direction eq 'up' ) { $f += $scanstep; }
+        if ( $direction eq 'down' ) { $f -= $scanstep; }
         parse_f($f);
         $loops++;
 
