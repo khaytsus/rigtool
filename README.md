@@ -24,9 +24,20 @@ This script has the US Band Plan preconfigured as of 12/2015, but I do not have 
 
 ### Prompt
 
-The prompt is based on the mode (manual or automatic) and has some dynamic text associated for if out of band, in scan mode, etc, but it always shows the following:
+The prompt is based on the mode (manual or automatic) and has some dynamic text associated for if out of band, in scan mode, etc.
 
-Freq/Signal/Mode/Lockstatus
+#### Auto mode
+
+(C 2.8 -2.8) (Auto mode)
+14076.00/-29/USB/A/U
+
+This indicates the radio is on 14.076mhz, signal strength is -29, USB, VFO A, and Unlocked.  My tuner setting for this band is Inductor C, Antenna 2.8, Antenna -2.8 (yes, tuning 20m is goofy for me for right now).  This information is updated about once a second, so if changing frequency all of this updates in basically real time, including if you go out of band it displays a warning, or if different tuner settings are set for a different part of the band, etc.
+
+#### Manual mode
+
+(10138.00/-30/USB/A/U) (G 2.8 4.0): 
+
+Manual mode basically has the same information, except it does not update in real time, instead it's accepting input to change settings.  Each time you hit enter, it updates the prompt.
 
 ### Manual mode commands
 
@@ -36,7 +47,8 @@ The default mode when launched is manual mode, which allows you to control the r
   * Switch to Automatic mode
  * f####
   * Switch to frequency in kHz, ie:  f28450
-  * You may also just type 28450 for a quick frequency change
+  * You can combine commands, such as f28450ub will set VFO B to Upper Side Band, frequency 28450.
+  * You may also just type 28450, but cannot combine this with any other commands
  * u/l
   * Switch to Upper/Lower Side Band
  * c
@@ -51,6 +63,7 @@ The default mode when launched is manual mode, which allows you to control the r
   * Exit
  * lock
   * Lock to current frequency and mode
+  * This is software lock; does not set Lock setting on radio, just keeps the radio at current settings
  * unlock
   * Unlock
  * s####-####
@@ -100,9 +113,9 @@ In manual mode, you may combine multiple commands into one, such as:
 
 ### Scan mode
 
-When initiated from Manual mode, the scan mode simply scans from the bottom frequency given to the top frequency given and when it reaches the boundary it reverses and scans down the band.  The same is true when scanning down; when the bottom boundary is hit it will scan back up the band again.  Example:  s7100-7300 will scan from 7100kHz to 7300kHz, starting at 7100kHz.
+When initiated from Manual mode, the scan mode scans from the bottom frequency given to the top frequency given and when it reaches the boundary it reverses and scans back to the bottom, scanning back and forth between the two boundaries.  Example:  s7100-7300 will scan from 7100kHz to 7300kHz, starting at 7100kHz.
 
-When initiated from Automatic mode it will scan from the current frequency until it reaches the band edge for your privileges, at which time the scan direction will reverse.  If the scan is initiated outside of your allowed band allocation, the scan will continue until stopped to allow for scanning on other non-amateur bands.
+When initiated from Automatic mode it will scan from the current frequency until it reaches the band edge for your privileges, at which time the scan direction will reverse.  If the scan is initiated outside of your allowed band allocation, the scan will continue until stopped.  This allows for scanning on other non-amateur bands.
 
 Both modes scan until they are interrupted by pressing any key which provides input to the script, such as the space bar.
 
@@ -116,11 +129,11 @@ You're on 28450kHz and you see a DX spot on 28400, you can type f28400 (or just 
 
 ### Repeat Last Command
 
-The ! command in Manual mode will repeat the last command, most useful for if you're scanning and you want to stop to check out a possible signal, but keep scanning.  Only stores scanning and frequency changing commands in Manual mode.
+The ! command in Manual mode will repeat the last command, most useful for if you're scanning and you want to stop to check out a possible signal, then after that keep scanning.  Only scanning and frequency changing commands are remembered for repeating.
 
 ### Band privileges
 
-The script uses the band privileges configuration to determine when to switch to cw or phone modes, as well as when to show warnings when out of band privileges.
+The script uses the band privileges configuration to determine when to switch to CW or phone modes, as well as when to show warnings when out of band privileges.
 
 The script is configured for the US Amateur Band Allocations as of 12/2015 and you may configure your license in the script.
 
@@ -150,6 +163,8 @@ You may specify **_auto_** as the first command line argument to go directly int
  * Change to named frequency
  * Macros
   * It would be nice if I could set PMS Lower 1 and PMS Upper 1 and start scanning PMS 1
+ * Load, modify, and save configuration
+  * Modifying would be limited to simple variables, not complex ones like band privileges.
 
 ### Known Bugs/Limitations
 

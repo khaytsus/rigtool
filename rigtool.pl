@@ -54,8 +54,8 @@ my $showtuneinfo = '1';
 my $rigopenmax = '25';
 
 # Step sizes for cursor keys in auto mode
-my $hzstep = '0.1';
-my $khzstep = '1.0';
+my $hzstep    = '0.1';
+my $khzstep   = '1.0';
 my $largestep = '10';
 
 # Step size for can mode
