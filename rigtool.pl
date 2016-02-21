@@ -424,6 +424,11 @@ sub auto_mode {
         ReadMode('cbreak');
         my $char = ReadKey(-1);
 
+        # We need this defined, so if it's not, make it so
+        if ( !defined($char) ) {
+            $char = '';
+        }
+
         my $extra = $r . '(Auto mode)';
         my ( $prompt, $tunertext, $extratext ) = create_prompt($extra);
 
@@ -440,79 +445,75 @@ sub auto_mode {
         print $cl . $tunertext . ' ' . $extratext . "\n";
         print $cl . $prompt . "\r";
 
-        if ( defined($char) ) {
+        # Exit auto mode
+        if ( $char eq 'q' ) { $autoloop = 0; }
 
-            # Exit
-            if ( $char eq 'q' ) { $autoloop = 0; }
+        # Enable lock mode
+        if ( $char eq 'l' ) {
 
-            # Enable lock mode
-            if ( $char eq 'l' ) {
+            # Lock to current freq/mode
+            $locked    = 1;
+            $quickfreq = $f / $freqdiv;
+            $quickmode = $textmode;
+        }
 
-                # Lock to current freq/mode
-                $locked    = 1;
-                $quickfreq = $f / $freqdiv;
-                $quickmode = $textmode;
-            }
+        # Disable lock mode
+        if ( $char eq 'u' ) {
+            $locked = 0;
+        }
 
-            # Disable lock mode
-            if ( $char eq 'u' ) {
-                $locked = 0;
-            }
+        # Process arrow keys, dunno why I can't seem to read the whole input
+        # so just look for what the ANSI code has in it
+        my $tmpf = $f / $freqdiv;
 
-          # Process arrow keys, dunno why I can't seem to read the whole input
-          # so just look for what the ANSI code has in it
-            my $tmpf = $f / $freqdiv;
+        # Right; Up 10hz
+        if ( $char =~ /C/xms ) {
+            $tmpf += $hzstep;
+            parse_f($tmpf);
+        }
 
-            # Right; Up 10hz
-            if ( $char =~ /C/xms ) {
-                $tmpf += $hzstep;
-                parse_f($tmpf);
-            }
+        # Left; Down 10hz
+        if ( $char =~ /D/xms ) {
+            $tmpf -= $hzstep;
+            parse_f($tmpf);
+        }
 
-            # Left; Down 10hz
-            if ( $char =~ /D/xms ) {
-                $tmpf -= $hzstep;
-                parse_f($tmpf);
-            }
+        # Up; Up 1khz
+        if ( $char =~ /A/xms ) {
+            $tmpf += $khzstep;
+            parse_f($tmpf);
+        }
 
-            # Up; Up 1khz
-            if ( $char =~ /A/xms ) {
-                $tmpf += $khzstep;
-                parse_f($tmpf);
-            }
+        # Down; Down 1khz
+        if ( $char =~ /B/xms ) {
+            $tmpf -= $khzstep;
+            parse_f($tmpf);
+        }
 
-            # Down; Down 1khz
-            if ( $char =~ /B/xms ) {
-                $tmpf -= $khzstep;
-                parse_f($tmpf);
-            }
+        # Page Up; up 10khz
+        if ( $char =~ /5/xms ) {
+            $tmpf += $largestep;
+            parse_f($tmpf);
+        }
 
-            # Page Up; up 10khz
-            if ( $char =~ /5/xms ) {
-                $tmpf += $largestep;
-                parse_f($tmpf);
-            }
+        # Page Down; down 10khz
+        if ( $char =~ /6/xms ) {
+            $tmpf -= $largestep;
+            parse_f($tmpf);
+        }
 
-            # Page Down; down 10khz
-            if ( $char =~ /6/xms ) {
-                $tmpf -= $largestep;
-                parse_f($tmpf);
-            }
+        # Home; scan up.    I see 1 in screen, 7 outside, no idea why
+        if ( $char =~ /1/xms || $char =~ /7/xms ) {
+            scan( $tmpf, 0, 'up' );
+        }
 
-            # Home; scan up.    I see 1 in screen, 7 outside, no idea why
-            if ( $char =~ /1/xms || $char =~ /7/xms ) {
-                scan( $tmpf, 0, 'up' );
-            }
+        # End; scan down.  I see 4 in screen, 8 outside, no idea why
+        if ( $char =~ /4/xms || $char =~ /8/xms ) {
+            scan( $tmpf, 0, 'down' );
+        }
 
-            # End; scan down.  I see 4 in screen, 8 outside, no idea why
-            if ( $char =~ /4/xms || $char =~ /8/xms ) {
-                scan( $tmpf, 0, 'down' );
-            }
-
-            if ($char) {
-                select( undef, undef, undef, .1 );
-            }
-
+        if ($char) {
+            select( undef, undef, undef, .1 );
         }
 
         # Return to our locked freq/mode if locked
@@ -621,6 +622,12 @@ sub scan {
 
 sub create_prompt {
     my ($extra) = @_;
+
+    # If we got nothing passed in, set $extra to blank
+    if ( !defined($extra) ) {
+        $extra = '';
+    }
+
     my $freqcolor = $c_c;
     my ($pretty_freq, $cwmatch,   $datamatch,
         $ssbmatch,    $outofband, $tunertext
@@ -638,10 +645,7 @@ sub create_prompt {
     if ($locked) { $lockstatus = $c_r . 'L'; }
 
     if ($scanmode) {
-        if ( defined($extra) ) {
-            $extra = '(Scanning) ' . $extra;
-        }
-        else { $extra = '(Scanning)'; }
+        $extra = '(Scanning) ' . $extra;
     }
 
     if ($outofband) {
