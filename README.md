@@ -49,6 +49,7 @@ The default mode when launched is manual mode, which allows you to control the r
   * Switch to frequency in kHz, ie:  f28450
   * You can combine commands, such as f28450ub will set VFO B to Upper Side Band, frequency 28450.
   * You may also just type 28450, but cannot combine this with any other commands
+  * If you want to input a sub-khz frequency, such as 28.2035Mhz, you must put a period in, such as 28.2035 or 28203.5
  * u/l
   * Switch to Upper/Lower Side Band
  * c
@@ -108,8 +109,12 @@ In manual mode, you may combine multiple commands into one, such as:
 
  * f7188ub
   * Move to 7188kHz USB on VFO B
-  * Note that by default, 7188 would be LSB, but since specified, it will use USB
-  * Not specifying the mode will automatically pick LSB or USB
+  * By default, it would set the current VFO to the given frequency but with the 'b' token this forces it to set VFO B
+  * Because the token 'u' was specified, it will use USB even though 7188 would normally be LSB
+
+The script attempts to make a reasonable guess as to what frequency is intended based on input, such as 7200 or 7.200 or 7,200 are all assumed to be 7200kHz.  In order to input sub-khz frequencies, you must input with a separator, such as 28.2033 or 28203.3 would both be assumed to be 28203.3kHz.
+
+There are two variables in the script, $tune_bottom and $tune_top, which when set to your tuning limits can warn you when you attempt to tune out of the band limits of your radio.  The script will still instruct the radio to tune to the input frequency and if it is out of band will likely just stay on the frequency it was already on.  If you want to enforce the limits, set $enforce_tune_limit to 1 which will invalidate the input.
 
 ### Scan mode
 

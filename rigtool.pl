@@ -26,6 +26,11 @@ my $data_passband = '3000';
 my $ssb_passband  = '3000';
 my $am_passband   = '6000';
 
+# Radio tuning limits
+my $tune_bottom        = '30000';
+my $tune_top           = '56000000';
+my $enforce_tune_limit = 0;
+
 # If your radio offsets when it switches between CW and SSB, you can set that here
 # or set it to 0 if you don't want the script twiddling this on CW/SSB transitions
 my $cwoffset = 700;
@@ -354,7 +359,7 @@ sub parse_input {
     }
 
     # Parse and change frequency
-    if ( $input =~ /f/xms || $input =~ /^[0-9\.]+$/xms ) {
+    if ( $input =~ /f/xms || $input =~ /^[0-9\.,]+$/xms ) {
         parse_f($input);
         $storelastinput++;
     }
@@ -388,8 +393,8 @@ sub parse_input {
         if ( $bottom =~ /\d+/xms && $top =~ /\d+/xms && ( $top > $bottom ) ) {
 
             # Trim any whitespace out
-            $bottom =~ s/^\s+|\s+$//g;
-            $top =~ s/^\s+|\s+$//g;
+            $bottom =~ s/^\s+|\s+$//gx;
+            $top =~ s/^\s+|\s+$//gx;
             scan( $bottom, $top, '' );
             $storelastinput++;
         }
@@ -513,6 +518,7 @@ sub auto_mode {
         }
 
         if ($char) {
+            # Sleep can only do integers, this pattern can do sub-second sleeps
             select( undef, undef, undef, .1 );
         }
 
@@ -859,11 +865,40 @@ sub parse_f {
     return;
 }
 
-# Clean up and return in hz
+# Clean up, figure out what's frequency is probably wanted and return in hz
 sub clean_freq {
     my ($freq) = @_;
-    $freq =~ tr/0-9\.//cd;
-    $freq *= $freqdiv;
+
+    # Strip out anything but numbers and separators
+    $freq =~ tr/0-9\.,//cd;
+
+    # Normalize , separator to .
+    $freq =~ s/,/\./xsm;
+
+    # Bail out if we find multiple separators
+    if ( $freq =~ /^\d+\.\d+\.\d+$/xsm ) {
+        print "Multiple separators found; invalid input\n";
+        return 0;
+    }
+
+    # ##.### looks like megahertz
+    if ( $freq =~ /^\d{1,2}\.\d+$/xsm ) {
+        $freq *= $freqdiv * $freqdiv;
+    }
+
+    # Otherwise, we assume input in Kilohertz
+    else {
+        $freq *= $freqdiv;
+    }
+
+    # Check to see if we're outside of tuning range
+    if (   ( defined($tune_bottom) && defined($tune_top) )
+        && ( $freq < $tune_bottom || $freq > $tune_top ) )
+    {
+        print 'Invalid input, outside of radio limits: ' . $freq . "hz\n";
+        if ($enforce_tune_limit) { return 0; }
+    }
+
     return $freq;
 }
 
@@ -1070,6 +1105,8 @@ auto - Switch to autotune mode
 lock - Lock to current freq/mode
 unlock - Unlock
 f7188lb - Move to 7188kHz LSB on VFO B
+28450 - Move to 28450kHz (assumes input in kilohertz)
+28203.5 or 28.2035 - Move to 28203.5kHz (only way to input sub-khz frequencies)
 s7200-7300 - Scan 7200 to 7300
 
 (freq/sig/mode/lockstatus)
@@ -1175,15 +1212,3 @@ sub rigclose {
 
     return;
 }
-
-# Reference stuff I might play with later
-
-#$rig->set_level("VOX", 1);
-#$lvl = $rig->get_level_i("VOX");
-#print "VOX level:\t\t$lvl\n";
-#$rig->set_level($Hamlib::RIG_LEVEL_VOX, 5);
-#$lvl = $rig->get_level_i($Hamlib::RIG_LEVEL_VOX);
-#print "VOX level:\t\t$lvl\n";
-
-#print "\nSending Morse, '73'\n";
-#$rig->send_morse($Hamlib::RIG_VFO_A, "73");
