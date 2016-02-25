@@ -71,7 +71,12 @@ my $scanstep = '2.0';
 
 # Define our cw and ssb freqs and get them defined based on license
 my ( @cwfreqs, @datafreqs, @ssbfreqs );
+
+# Define our tuner info
 my %tuneinfo = ();
+
+# Define our frequency names
+my %freqnames = ();
 
 get_bandplan( $country, $license );
 
@@ -112,10 +117,6 @@ my $coloroutput = '1';
 my $light = '0';
 color_tags();
 
-# Variables so we can flip/flop frequencies or return to the last one easy
-my $quickfreq = '14313';
-my $quickmode = 'u';
-
 # Lock the mode (set it back if it's changed on the radio)
 # Really only works in auto mode (?)
 my $locked = '0';
@@ -131,6 +132,10 @@ my $autoloop  = '0';
 
 # Frequency divider to get to khz
 my $freqdiv = '1000';
+
+# Variables so we can flip/flop frequencies or return to the last one easy
+my $quickfreq = $rig->get_freq() / $freqdiv;
+my $quickmode = 'u';
 
 # If auto is the first parameter, go straight to auto mode
 
@@ -283,6 +288,7 @@ sub parse_input {
     my ($input) = @_;
 
     my $storelastinput = '0';
+    my $skip           = '0';
 
     # Get current info so we can switch back to these if we change with 'r'
     my $f = $rig->get_freq();
@@ -306,6 +312,7 @@ sub parse_input {
         $autoloop = 1;
         auto_mode();
         $input = '';
+        $skip++;
     }
 
     # Lock to current freq/mode
@@ -315,6 +322,7 @@ sub parse_input {
         $quickfreq = $f / $freqdiv;
         $quickmode = $textmode;
         $input     = '';
+        $skip++;
     }
 
     # Unlock
@@ -322,84 +330,126 @@ sub parse_input {
         print "Unlocking\n";
         $locked = 0;
         $input  = '';
+        $skip++;
     }
 
-    if ( $input =~ /q/xms ) { $whileloop = 0 }
+    if ( $input =~ /q/xms ) {
+        $whileloop = 0;
+        return;
+    }
 
     # Do nothing if we're locked
     if ($locked) { return; }
 
-    # Revert to previous mode
-    if ( $input =~ /r/xms ) {
-
-        # Switch modes
-        parse_f($quickfreq);
-        parse_mode($quickmode);
-        $input = '';
-    }
-
-    # Change to VFO A
-    if ( $input =~ /a/xms && $input !~ /am/xms ) {
-        unless ( $automode || $scanmode ) { print "Switching to VFO A\n"; }
-
-        # If we specify vfo, make sure we honor it
-        $lastvfo = 'A';
-        $rig->set_vfo($Hamlib::RIG_VFO_VFO);
-        $rig->set_vfo($Hamlib::RIG_VFO_A);
-    }
-
-    # Change to VFO B
-    if ( $input =~ /b/xms ) {
-        unless ( $automode || $scanmode ) { print "Switching to VFO B\n"; }
-
-        # If we specify vfo, make sure we honor it
-        $lastvfo = 'B';
-        $rig->set_vfo($Hamlib::RIG_VFO_VFO);
-        $rig->set_vfo($Hamlib::RIG_VFO_B);
-    }
-
-    # Parse and change frequency
-    if ( $input =~ /f/xms || $input =~ /^[0-9\.,]+$/xms ) {
-        parse_f($input);
-        $storelastinput++;
-    }
-
-    # Parse and change mode
-    if (   $input =~ /u/xms
-        || $input =~ /l/xms
-        || $input =~ /c/xms
-        || $input =~ /am/xms
-        || $input =~ /d/xms )
-    {
-        parse_mode($input);
-    }
-
-    # Scan up
-    if ( $input =~ /sup/xms ) {
-        scan( $f / $freqdiv, 0, 'up' );
-        $storelastinput++;
-    }
-
-    # Scan down
-    if ( $input =~ /sdown/xms ) {
-        scan( $f / $freqdiv, 0, 'down' );
-        $storelastinput++;
-    }
-
-    # Scan range
-    if ( $input =~ /s\ *\d+\-\d+/xms ) {
-        my ( $bottom, $top ) = split( /-/xms, $input );
-        $bottom =~ s/s//;
-        if ( $bottom =~ /\d+/xms && $top =~ /\d+/xms && ( $top > $bottom ) ) {
-
-            # Trim any whitespace out
-            $bottom =~ s/^\s+|\s+$//gx;
-            $top =~ s/^\s+|\s+$//gx;
-            scan( $bottom, $top, '' );
+    if ( $input =~ /chan/xms ) {
+        my ( $command, @channel ) = split( /\ /xms, $input );
+        my $channel = join( " ", @channel );
+        my $freq = freq_from_name($channel);
+        if ( defined($freq) && $freq != 0 ) {
+            parse_f($freq);
             $storelastinput++;
         }
-        else {
-            print "Invalid scan range.  Example:  s7200-7300\n";
+        $skip++;
+    }
+
+# Skip our other tokens if we've done something that might execute more commands
+    if ( !$skip ) {
+
+        # Revert to previous mode
+        if ( $input =~ /r/xms ) {
+
+            # Switch modes
+            parse_f($quickfreq);
+            parse_mode($quickmode);
+            $input = '';
+        }
+
+        # Change to VFO A
+        if ( $input =~ /a/xms && $input !~ /am/xms ) {
+            unless ( $automode || $scanmode ) {
+                print "Switching to VFO A\n";
+            }
+
+            # If we specify vfo, make sure we honor it
+            $lastvfo = 'A';
+            $rig->set_vfo($Hamlib::RIG_VFO_VFO);
+            $rig->set_vfo($Hamlib::RIG_VFO_A);
+        }
+
+        # Change to VFO B
+        if ( $input =~ /b/xms ) {
+            unless ( $automode || $scanmode ) {
+                print "Switching to VFO B\n";
+            }
+
+            # If we specify vfo, make sure we honor it
+            $lastvfo = 'B';
+            $rig->set_vfo($Hamlib::RIG_VFO_VFO);
+            $rig->set_vfo($Hamlib::RIG_VFO_B);
+        }
+
+        # Parse and change frequency
+        if ( $input =~ /f/xms || $input =~ /^[0-9\.,]+$/xms ) {
+            parse_f($input);
+            $storelastinput++;
+        }
+
+        # Parse and change mode
+        if (   $input =~ /u/xms
+            || $input =~ /l/xms
+            || $input =~ /c/xms
+            || $input =~ /am/xms
+            || $input =~ /d/xms )
+        {
+            parse_mode($input);
+        }
+
+        # Scan up
+        if ( $input =~ /sup/xms ) {
+            scan( $f / $freqdiv, 0, 'up' );
+            $storelastinput++;
+        }
+
+        # Scan down
+        if ( $input =~ /sdown/xms ) {
+            scan( $f / $freqdiv, 0, 'down' );
+            $storelastinput++;
+        }
+
+        # Scan range
+        if ( $input =~ /s\ *\d+\-\d+/xms ) {
+            my ( $bottom, $top ) = split( /-/xms, $input );
+            $bottom =~ s/s//;
+            if (   $bottom =~ /\d+/xms
+                && $top =~ /\d+/xms
+                && ( $top > $bottom ) )
+            {
+
+                # Trim any whitespace out
+                $bottom =~ s/^\s+|\s+$//gx;
+                $top =~ s/^\s+|\s+$//gx;
+                scan( $bottom, $top, '' );
+                $storelastinput++;
+            }
+            else {
+                print "Invalid scan range.  Example:  s7200-7300\n";
+            }
+        }
+
+        # If empty enter key, see if we changed frequency
+        if ( $input =~ /^$/xms ) {
+            my $quickfreqtest = $quickfreq * $freqdiv;
+            if ( $f != $quickfreqtest ) {
+                my $freqname = name_from_freq($f);
+                my ($pretty_freq, $cwmatch,   $datamatch,
+                    $ssbmatch,    $outofband, $tunertext
+                ) = freq_text();
+                print 'Switched to ' . $pretty_freq . ' kHz';
+                if ( defined($freqname) && $freqname ne '' ) {
+                    print ' (' . $c_c . $freqname . $r . ')';
+                }
+                print "\n";
+            }
         }
     }
 
@@ -426,6 +476,8 @@ sub auto_mode {
     print "\033[2J";
 
     while ($autoloop) {
+        my $extra = '';
+
         ReadMode('cbreak');
         my $char = ReadKey(-1);
 
@@ -434,21 +486,36 @@ sub auto_mode {
             $char = '';
         }
 
-        my $extra = $r . '(Auto mode)';
+        my $f = $rig->get_freq();
+        my ( $mode, $width ) = $rig->get_mode();
+
+        # If we know this frequency, add it to the prompt
+        my $freqname = name_from_freq($f);
+        if ( defined($freqname) && $freqname ne '' ) {
+            $extra = '(' . $c_c . $freqname . $r . ') ';
+        }
+
+        $extra .= $r . '(Auto mode)';
         my ( $prompt, $tunertext, $extratext ) = create_prompt($extra);
 
-        # TODO:  Fix this so I'm not getting the same text back from both
+   # TODO:  Fix tunertextextra so I'm not getting the same text back from both
         my ( $pretty_freq, $cwmatch, $datamatch,
             $ssbmatch, $outofband, $tunertextextra )
             = freq_text();
-        my $f = $rig->get_freq();
-        my ( $mode, $width ) = $rig->get_mode();
         my $textmode = Hamlib::rig_strrmode($mode);
+
         auto_mode_set( $f, $textmode, $cwmatch, $datamatch, $ssbmatch );
 
+        # Move the cursor to 0,0
         print "\033[0;0H";
-        print $cl . $tunertext . ' ' . $extratext . "\n";
-        print $cl . $prompt . "\r";
+        print $cl . $tunertext . ' ' . $extratext;
+
+        # Erase the rest of the line
+        print "\033[K\n";
+        print $cl . $prompt;
+
+        # Clear from cursor to end of screen
+        print "\033[J\r";
 
         # Exit auto mode
         if ( $char eq 'q' ) { $autoloop = 0; }
@@ -517,16 +584,19 @@ sub auto_mode {
             scan( $tmpf, 0, 'down' );
         }
 
-        if ($char) {
-            # Sleep can only do integers, this pattern can do sub-second sleeps
-            select( undef, undef, undef, .1 );
-        }
-
         # Return to our locked freq/mode if locked
         if ($locked) {
             parse_f($quickfreq);
             parse_mode($quickmode);
         }
+
+        # If the character buffer is empty, sleep a little before looping
+        if ( !$char ) {
+
+           # Sleep can only do integers, this pattern can do sub-second sleeps
+            select( undef, undef, undef, .25 );
+        }
+
     }
     print "\nExiting back to normal mode\n";
     ReadMode('normal');
@@ -816,7 +886,9 @@ sub parse_f {
 
     my $cleanfreq = clean_freq($freq);
 
-    if ( $f eq $cleanfreq ) { return; }
+    if ( $f == $cleanfreq || $cleanfreq == 0 ) { return; }
+
+    my $freqname = name_from_freq($cleanfreq);
 
     if ( $cleanfreq > 0 ) {
 
@@ -834,7 +906,11 @@ sub parse_f {
 
         my $prettyfreq = $cleanfreq / $freqdiv;
         unless ( $locked || $automode || $scanmode ) {
-            print 'Switching to ' . $prettyfreq . ' kHz' . "\n";
+            print 'Switching to ' . $prettyfreq . ' kHz';
+            if ( defined($freqname) && $freqname ne '' ) {
+                print ' (' . $freqname . ')';
+            }
+            print "\n";
         }
         my $vfo     = $rig->get_vfo();
         my $textvfo = Hamlib::rig_strvfo($vfo);
@@ -1053,32 +1129,84 @@ sub get_bandplan {
 
     # Define our tuner info
     %tuneinfo = (
-        '1800000-1850000'   => 'A 6.0 4.9',       # 160m
-        '1850000-1950000'   => 'A 5.0 5.0',       # 160m
-        '1950000-2000000'   => 'A 3.9 5.1',       # 160m
-        '3535000-3600000'   => 'L 3.8 4.5',       # 80m
-        '3700000-3900000'   => 'Direct',          # 80m
-        '3900000-4000000'   => 'L 3.0 4.0',       # 80m
-        '5330500-5403500'   => 'K 2.9 1.0',       # 60m
-        '7025000-7125000'   => 'I 1.2 5.0',       # 40m
-        '7125000-7180000'   => 'I 2.2 4.9',       # 40m
-        '7180000-7220000'   => 'I 2.1 4.2',       # 40m
-        '7220000-7300000'   => 'I 2.1 4.0',       # 40m
-        '10100000-10150000' => 'G 2.8 4.0',       # 30m
-        '14025000-14150000' => 'C 2.8 -2.8',      # 20m
-        '14175000-14350000' => 'Direct/Tuned',    # 20m
-        '18068000-18168000' => 'C 2.0 0.5',       # 17m
-        '21025000-21200000' => 'B 1.2 3.9',       # 15m
-        '21225000-21300000' => 'B 1.1 4.1',       # 15m
-        '21300000-21450000' => 'Direct',          # 15m
-        '24890000-24990000' => 'C 1.0 2.3',       # 12m
-        '28000000-29700000' => 'Direct',          # 10m
-        '50000000-51000000' => 'C 0.2 2.2',       # 6m
-        '51000000-52000000' => 'B 3.0 2.2',       # 6m
-        '52000000-53000000' => 'B 6.0 2.0',       # 6m
-        '53000000-54000000' => 'UNKNOWN'          # 6m
+        '1800000-1850000'   => 'A 6.0 4.9',     # 160m
+        '1850000-1950000'   => 'A 5.0 5.0',     # 160m
+        '1950000-2000000'   => 'A 3.9 5.1',     # 160m
+        '3535000-3600000'   => 'L 3.8 4.5',     # 80m
+        '3700000-3900000'   => 'ATU',           # 80m
+        '3900000-4000000'   => 'L 3.0 4.0',     # 80m
+        '5330500-5403500'   => 'K 2.9 1.0',     # 60m
+        '7025000-7125000'   => 'I 1.2 5.0',     # 40m
+        '7125000-7180000'   => 'I 2.2 4.9',     # 40m
+        '7180000-7220000'   => 'I 2.1 4.2',     # 40m
+        '7220000-7300000'   => 'I 2.1 4.0',     # 40m
+        '10100000-10150000' => 'G 2.8 4.0',     # 30m
+        '14025000-14350000' => 'ATU',           # 20m
+        '18068000-18168000' => 'C 2.0 0.5',     # 17m
+        '21025000-21450000' => 'ATU',           # 15m
+        '24890000-24990000' => 'ATU',           # 12m
+        '28000000-29700000' => 'Direct',        # 10m
+        '50000000-51000000' => 'C 0.2 2.2',     # 6m
+        '51000000-52000000' => 'B 3.0 2.2',     # 6m
+        '52000000-53000000' => 'B 6.0 2.0',     # 6m
+        '53000000-54000000' => 'UNKNOWN'        # 6m
     );
 
+    # Define our frequency names
+    %freqnames = (
+        '5330500'  => '60M CH1',
+        '5346500'  => '60M CH2',
+        '5357000'  => '60M CH3/JT65',
+        '5371500'  => '60M CH4',
+        '5403500'  => '60M CH5',
+        '1838000'  => '160M JT65',
+        '3576000'  => '80M JT65',
+        '7076000'  => '40M JT65',
+        '10138000' => '30M JT65',
+        '14076000' => '20M JT65',
+        '18102000' => '17M JT65',
+        '21076000' => '15M JT65',
+        '24917000' => '12M JT65',
+        '28076000' => '10M JT65',
+        '14200000' => 'Analog SSTV',
+        '14233000' => 'Digital SSTV',
+        '7200000'  => '40M Lids',
+    );
+
+    return;
+}
+
+# Give back a name if this frequency is known
+sub name_from_freq {
+    my ($freq) = @_;
+
+    # If set, add frequency name to status text
+    for my $key ( keys %freqnames ) {
+        my $value = $freqnames{$key};
+
+        if ( $freq eq $key ) {
+            return $value;
+        }
+    }
+
+    return;
+}
+
+# Give back a frequency if the channel name is known
+sub freq_from_name {
+    my ($channel) = @_;
+    for my $key ( keys %freqnames ) {
+        my $value = $freqnames{$key};
+        $value   = lc($value);
+        $channel = lc($channel);
+
+        # Allow a substring match
+        if ( $value =~ /\Q$channel/xms ) {
+            return $key / $freqdiv;
+        }
+    }
+
+    print 'Unknown channel:  ' . $channel . "\n";
     return;
 }
 
@@ -1104,6 +1232,7 @@ auto - Switch to autotune mode
   ?? - Auto mode help
 lock - Lock to current freq/mode
 unlock - Unlock
+chan name - Switch to frequency of named channel
 f7188lb - Move to 7188kHz LSB on VFO B
 28450 - Move to 28450kHz (assumes input in kilohertz)
 28203.5 or 28.2035 - Move to 28203.5kHz (only way to input sub-khz frequencies)

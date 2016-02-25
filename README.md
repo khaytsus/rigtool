@@ -50,6 +50,8 @@ The default mode when launched is manual mode, which allows you to control the r
   * You can combine commands, such as f28450ub will set VFO B to Upper Side Band, frequency 28450.
   * You may also just type 28450, but cannot combine this with any other commands
   * If you want to input a sub-khz frequency, such as 28.2035Mhz, you must put a period in, such as 28.2035 or 28203.5
+ * chan name
+  * Switch to the named channel which is defined in %freqnames
  * u/l
   * Switch to Upper/Lower Side Band
  * c
@@ -116,6 +118,10 @@ The script attempts to make a reasonable guess as to what frequency is intended 
 
 There are two variables in the script, $tune_bottom and $tune_top, which when set to your tuning limits can warn you when you attempt to tune out of the band limits of your radio.  The script will still instruct the radio to tune to the input frequency and if it is out of band will likely just stay on the frequency it was already on.  If you want to enforce the limits, set $enforce_tune_limit to 1 which will invalidate the input.
 
+If %freqnames is defined and the frequency matches, it will add the known name of the frequency to the response.
+
+You can also use the 'chan' command to change to a named channel, such as 'chan 60m ch1'.  Performs a substring match, but may return unexpected results if there are multiple matches as the internal ordering of a Perl hash is not guaranteed.
+
 ### Scan mode
 
 When initiated from Manual mode, the scan mode scans from the bottom frequency given to the top frequency given and when it reaches the boundary it reverses and scans back to the bottom, scanning back and forth between the two boundaries.  Example:  s7100-7300 will scan from 7100kHz to 7300kHz, starting at 7100kHz.
@@ -163,9 +169,6 @@ You may specify **_auto_** as the first command line argument to go directly int
  * Real radio lock mode, not software emulated mode (if possible in hamlib)
  * Do something with data frequency allocation info
   * Possibly able to switch to cw or data mode, even though these generally overlap
- * Identify specific frequencies by name
-  * Identify calling frequencies, known nets, etc
- * Change to named frequency
  * Macros
   * It would be nice if I could set PMS Lower 1 and PMS Upper 1 and start scanning PMS 1
  * Load, modify, and save configuration
