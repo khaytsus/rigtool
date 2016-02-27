@@ -120,7 +120,7 @@ There are two variables in the script, $tune_bottom and $tune_top, which when se
 
 If %freqnames is defined and the frequency matches, it will add the known name of the frequency to the response.
 
-You can also use the 'chan' command to change to a named channel, such as 'chan 60m ch1'.  Performs a substring match, but may return unexpected results if there are multiple matches as the internal ordering of a Perl hash is not guaranteed.
+You can also use the 'chan' command to change to a named channel, such as 'chan 60m ch1'.  Performs a substring match, but may return unexpected results if there are multiple matches as the internal ordering of a Perl has his not guaranteed.
 
 ### Scan mode
 
@@ -173,6 +173,7 @@ You may specify **_auto_** as the first command line argument to go directly int
   * It would be nice if I could set PMS Lower 1 and PMS Upper 1 and start scanning PMS 1
  * Load, modify, and save configuration
   * Modifying would be limited to simple variables, not complex ones like band privileges.
+ * Handle FM a little better, right now mode change isn't made if >10mhz and radio mode is FM to fix FM memories getting flipped to USB.
 
 ### Known Bugs/Limitations
 

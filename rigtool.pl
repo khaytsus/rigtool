@@ -796,7 +796,7 @@ sub auto_mode_set {
         elsif ( $f < $modefreq && $textmode ne 'LSB' ) {
             parse_mode('l');
         }
-        elsif ( $f > $modefreq && $textmode ne 'USB' ) {
+        elsif ( $f > $modefreq && $textmode ne 'USB' && $textmode ne 'FM' ) {
             parse_mode('u');
         }
 
