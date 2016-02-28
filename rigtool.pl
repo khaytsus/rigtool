@@ -152,28 +152,34 @@ if ( $arg eq 'auto' ) {
     auto_mode();
 }
 
-# Loop through our prompt while we're running
-while ($whileloop) {
-    my ( $prompt, $tunertext, $extratext ) = create_prompt();
-    if ( $tunertext ne '' ) {
-        print $tunertext . "\n";
-    }
-    print $prompt . ': ';
-    my $input = <STDIN>;
-    chomp $input;
-    $input = lc($input);
-    parse_input($input);
-
-    # Return to our locked freq/mode if locked
-    if ($locked) {
-        parse_f($quickfreq);
-        parse_mode($quickmode);
-    }
-}
+# Start manual loop
+manual_mode();
 
 print "Exiting script\n";
 
 rigclose();
+
+sub manual_mode {
+
+    # Loop through our prompt while we're running
+    while ($whileloop) {
+        my ( $prompt, $tunertext, $extratext ) = create_prompt();
+        if ( $tunertext ne '' ) {
+            print $tunertext . "\n";
+        }
+        print $prompt . ': ';
+        my $input = <STDIN>;
+        chomp $input;
+        $input = lc($input);
+        parse_input($input);
+
+        # Return to our locked freq/mode if locked
+        if ($locked) {
+            parse_f($quickfreq);
+            parse_mode($quickmode);
+        }
+    }
+}
 
 # We only expect to open the connection once, any more is something buggy
 if ( $rigopens > $rigopenmax ) {
@@ -444,7 +450,6 @@ sub parse_input {
 
         # If empty enter key, see if we changed frequency
         if ( $input =~ /^$/xms ) {
-            my $quickfreqtest = $quickfreq * $freqdiv;
             if ( $f != $lastfreq ) {
                 my $freqname = name_from_freq($f);
                 my ($pretty_freq, $cwmatch,   $datamatch,
@@ -505,7 +510,7 @@ sub auto_mode {
         $extra .= $r . '(Auto mode)';
         my ( $prompt, $tunertext, $extratext ) = create_prompt($extra);
 
-        # TODO:  Fix tunertextextra so I'm not getting the same text back from both
+   # TODO:  Fix tunertextextra so I'm not getting the same text back from both
         my ( $pretty_freq, $cwmatch, $datamatch,
             $ssbmatch, $outofband, $tunertextextra )
             = freq_text();
@@ -600,6 +605,7 @@ sub auto_mode {
 
         # Set lastfreq to our last known frequency
         $lastfreq = $f;
+
         # If the character buffer is empty, sleep a little before looping
         if ( !$char ) {
 
@@ -754,22 +760,30 @@ sub create_prompt {
     $pretty_freq = sprintf( '%8s', $pretty_freq );
     $textmode    = sprintf( '%3s', $textmode );
     $signal      = sprintf( '%3s', $signal );
-    my $prompt
-        = '('
-        . $freqcolor
-        . $pretty_freq
-        . $r . '/'
-        . $c_y
-        . $signal
-        . $r . '/'
-        . $c_g
-        . $textmode
-        . $r . '/'
-        . $c_m
-        . $textvfo
-        . $r . '/'
-        . $lockstatus
-        . $r . ')';
+
+    my $prompt = '';
+
+    if ( $pretty_freq < 1000 ) {
+        $prompt = '(' . $c_r . 'Unknown; hamlib issue?' . $r . ')';
+    }
+    else {
+        $prompt
+            = '('
+            . $freqcolor
+            . $pretty_freq
+            . $r . '/'
+            . $c_y
+            . $signal
+            . $r . '/'
+            . $c_g
+            . $textmode
+            . $r . '/'
+            . $c_m
+            . $textvfo
+            . $r . '/'
+            . $lockstatus
+            . $r . ')';
+    }
     return $prompt, $tunertext, $extra;
 }
 
