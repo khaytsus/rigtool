@@ -120,7 +120,7 @@ There are two variables in the script, $tune_bottom and $tune_top, which when se
 
 If %freqnames is defined and the frequency matches, it will add the known name of the frequency to the response.
 
-You can also use the 'chan' command to change to a named channel, such as 'chan 60m ch1'.  Performs a substring match, but may return unexpected results if there are multiple matches as the internal ordering of a Perl has his not guaranteed.
+You can also use the 'chan' command to change to a named channel, such as 'chan 60m ch1'.  Performs a substring match, but may return unexpected results if there are multiple matches as the internal ordering of a Perl hash is not guaranteed.
 
 ### Scan mode
 

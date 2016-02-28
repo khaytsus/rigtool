@@ -29,7 +29,7 @@ my $am_passband   = '6000';
 # Radio tuning limits
 my $tune_bottom        = '30000';
 my $tune_top           = '56000000';
-my $enforce_tune_limit = 0;
+my $enforce_tune_limit = '0';
 
 # If your radio offsets when it switches between CW and SSB, you can set that here
 # or set it to 0 if you don't want the script twiddling this on CW/SSB transitions
@@ -714,6 +714,7 @@ sub create_prompt {
     my $textvfo  = Hamlib::rig_strvfo($vfo);
     $textvfo =~ s/MEM/M/;
     $textvfo =~ tr/ABM\.//cd;
+    $lastvfo = $textvfo;
 
     # Only store A/B, don't store M
     if ( $textvfo ne 'M' ) { $lastvfo = $textvfo; }
@@ -924,7 +925,9 @@ sub parse_f {
         # If in Memory mode, switch to our last known VFO first
         if ( $textvfo eq 'MEM' ) {
             $rig->set_vfo($Hamlib::RIG_VFO_VFO);
-            if ( $lastvfo && $lastvfo eq 'A' ) {
+
+            # If we were last in memory mode, default to VFO A
+            if ( $lastvfo && ( $lastvfo eq 'A' || $lastvfo eq 'M' ) ) {
                 $rig->set_vfo($Hamlib::RIG_VFO_A);
                 $rig->set_freq( $Hamlib::RIG_VFO_A, $cleanfreq );
             }
