@@ -7,7 +7,7 @@ use Term::ReadKey;
 use strict;
 use warnings;
 
-our $VERSION = 1.1;
+our $VERSION = '1.1';
 
 # Comment out to enable hamlib debugging (very noisy)
 Hamlib::rig_set_debug($Hamlib::RIG_DEBUG_NONE);
@@ -107,8 +107,9 @@ my $ansi = eval {
     1;
 };
 
-# Set up colors
-my ( $r, $c_r, $c_g, $c_c, $c_m, $c_b, $c_y, $cl );
+# Set up colors and other ANSI codes
+my ( $r, $c_r, $c_g, $c_c, $c_m, $c_b, $c_y, $cl,
+    $clearrestscreen, $clearscreen, $topleft );
 
 # Use color output
 my $coloroutput = '1';
@@ -136,6 +137,7 @@ my $freqdiv = '1000';
 # Variables so we can flip/flop frequencies or return to the last one easy
 my $quickfreq = $rig->get_freq() / $freqdiv;
 my $quickmode = 'u';
+my $lastfreq  = $quickfreq * $freqdiv;
 
 # If auto is the first parameter, go straight to auto mode
 
@@ -153,7 +155,10 @@ if ( $arg eq 'auto' ) {
 # Loop through our prompt while we're running
 while ($whileloop) {
     my ( $prompt, $tunertext, $extratext ) = create_prompt();
-    print $prompt . ' ' . $tunertext . ': ';
+    if ( $tunertext ne '' ) {
+        print $tunertext . "\n";
+    }
+    print $prompt . ': ';
     my $input = <STDIN>;
     chomp $input;
     $input = lc($input);
@@ -165,6 +170,8 @@ while ($whileloop) {
         parse_mode($quickmode);
     }
 }
+
+print "Exiting script\n";
 
 rigclose();
 
@@ -275,7 +282,7 @@ sub freq_text {
     else {
         $pretty_freq = $pretty_freq . '.00';
     }
-    my $outofband = 0;
+    my $outofband = '0';
     unless ( $matched || !defined($license) ) { $outofband = '1'; }
 
     return (
@@ -309,7 +316,7 @@ sub parse_input {
 
     # Automatic mode
     if ( $input =~ /auto/xms ) {
-        $autoloop = 1;
+        $autoloop = '1';
         auto_mode();
         $input = '';
         $skip++;
@@ -318,7 +325,7 @@ sub parse_input {
     # Lock to current freq/mode
     if ( $input =~ /^lock/xms ) {
         print "Locking\n";
-        $locked    = 1;
+        $locked    = '1';
         $quickfreq = $f / $freqdiv;
         $quickmode = $textmode;
         $input     = '';
@@ -328,13 +335,13 @@ sub parse_input {
     # Unlock
     if ( $input =~ /^unlock/xms ) {
         print "Unlocking\n";
-        $locked = 0;
+        $locked = '0';
         $input  = '';
         $skip++;
     }
 
     if ( $input =~ /q/xms ) {
-        $whileloop = 0;
+        $whileloop = '0';
         return;
     }
 
@@ -361,7 +368,6 @@ sub parse_input {
             # Switch modes
             parse_f($quickfreq);
             parse_mode($quickmode);
-            $input = '';
         }
 
         # Change to VFO A
@@ -439,7 +445,7 @@ sub parse_input {
         # If empty enter key, see if we changed frequency
         if ( $input =~ /^$/xms ) {
             my $quickfreqtest = $quickfreq * $freqdiv;
-            if ( $f != $quickfreqtest ) {
+            if ( $f != $lastfreq ) {
                 my $freqname = name_from_freq($f);
                 my ($pretty_freq, $cwmatch,   $datamatch,
                     $ssbmatch,    $outofband, $tunertext
@@ -449,7 +455,9 @@ sub parse_input {
                     print ' (' . $c_c . $freqname . $r . ')';
                 }
                 print "\n";
+                $lastfreq = $f;
             }
+            return;
         }
     }
 
@@ -469,11 +477,10 @@ sub parse_input {
 
 # Change mode based on current frequency
 sub auto_mode {
-    $automode = 1;
+    $automode = '1';
     ReadMode('cbreak');
 
-    # Clear screen and move to upper left corner
-    print "\033[2J";
+    print $clearscreen;
 
     while ($autoloop) {
         my $extra = '';
@@ -498,7 +505,7 @@ sub auto_mode {
         $extra .= $r . '(Auto mode)';
         my ( $prompt, $tunertext, $extratext ) = create_prompt($extra);
 
-   # TODO:  Fix tunertextextra so I'm not getting the same text back from both
+        # TODO:  Fix tunertextextra so I'm not getting the same text back from both
         my ( $pretty_freq, $cwmatch, $datamatch,
             $ssbmatch, $outofband, $tunertextextra )
             = freq_text();
@@ -506,32 +513,33 @@ sub auto_mode {
 
         auto_mode_set( $f, $textmode, $cwmatch, $datamatch, $ssbmatch );
 
-        # Move the cursor to 0,0
-        print "\033[0;0H";
-        print $cl . $tunertext . ' ' . $extratext;
+        print $topleft . $cl . $tunertext . ' ' . $extratext . "\n";
 
-        # Erase the rest of the line
-        print "\033[K\n";
         print $cl . $prompt;
 
-        # Clear from cursor to end of screen
-        print "\033[J\r";
+        print $clearrestscreen;
 
         # Exit auto mode
-        if ( $char eq 'q' ) { $autoloop = 0; }
+        if ( $char eq 'q' ) { $autoloop = '0'; }
+
+        # Exit script completely
+        if ( $char eq 'Q' ) {
+            $autoloop  = '0';
+            $whileloop = '0';
+        }
 
         # Enable lock mode
         if ( $char eq 'l' ) {
 
             # Lock to current freq/mode
-            $locked    = 1;
+            $locked    = '1';
             $quickfreq = $f / $freqdiv;
             $quickmode = $textmode;
         }
 
         # Disable lock mode
         if ( $char eq 'u' ) {
-            $locked = 0;
+            $locked = '0';
         }
 
         # Process arrow keys, dunno why I can't seem to read the whole input
@@ -574,13 +582,13 @@ sub auto_mode {
             parse_f($tmpf);
         }
 
-        # Home; scan up.    I see 1 in screen, 7 outside, no idea why
-        if ( $char =~ /1/xms || $char =~ /7/xms ) {
+     # Home; scan up.    Seems to be 1, 7, or H depending on shell environment
+        if ( $char =~ /1/xms || $char =~ /7/xms || $char =~ /H/xms ) {
             scan( $tmpf, 0, 'up' );
         }
 
-        # End; scan down.  I see 4 in screen, 8 outside, no idea why
-        if ( $char =~ /4/xms || $char =~ /8/xms ) {
+        # End; scan down.  4, 8, or F
+        if ( $char =~ /4/xms || $char =~ /8/xms || $char =~ /F/xms ) {
             scan( $tmpf, 0, 'down' );
         }
 
@@ -590,6 +598,8 @@ sub auto_mode {
             parse_mode($quickmode);
         }
 
+        # Set lastfreq to our last known frequency
+        $lastfreq = $f;
         # If the character buffer is empty, sleep a little before looping
         if ( !$char ) {
 
@@ -600,7 +610,7 @@ sub auto_mode {
     }
     print "\nExiting back to normal mode\n";
     ReadMode('normal');
-    $automode = 0;
+    $automode = '0';
 
     return;
 }
@@ -611,14 +621,14 @@ sub auto_mode {
 sub scan {
     my ( $f, $top, $direction ) = @_;
     my $scanchar = '';
-    my $loops    = 0;
+    my $loops    = '0';
     my $bottom;
 
     # If we start scanning out of band, don't attempt to band scan
-    my $scanstart      = 1;
-    my $startoutofband = 0;
+    my $scanstart      = '1';
+    my $startoutofband = '0';
 
-    $scanmode = 1;
+    $scanmode = '1';
 
     # If we're in range scan mode, scan up from the bottom
     if ($top) {
@@ -629,7 +639,7 @@ sub scan {
         parse_f($bottom);
     }
 
-    print "\033[2J";
+    print $clearscreen;
     while ( defined($scanchar) && $scanchar eq "" ) {
 
         # If we're in range scan mode, check boundaries
@@ -651,9 +661,9 @@ sub scan {
                 $ssbmatch,    $outofband, $tunertext
             ) = freq_text();
             if ( $scanstart == 1 ) {
-                $scanstart = 0;
+                $scanstart = '0';
                 if ($outofband) {
-                    $startoutofband = 1;
+                    $startoutofband = '1';
                 }
             }
 
@@ -682,16 +692,18 @@ sub scan {
         if ( $loops % 10 ) {
             my ( $prompt, $tunertext, $extratext ) = create_prompt();
 
-            print "\033[0;0H";
-            print "\n";
+            print $topleft;
             print $cl . $tunertext . ' ' . $extratext . "\n";
             print $cl . $prompt . "\r";
         }
     }
     ReadMode('normal');
 
-    print "\033[2J";
-    $scanmode = 0;
+    print $clearscreen . $topleft;
+    $scanmode = '0';
+
+    # Last our last known frequency; where we finished scanning
+    $lastfreq = $f * $freqdiv;
 
     return;
 }
@@ -784,11 +796,11 @@ sub auto_mode_set {
         }
 
         # Handle 60m; it's always USB for SSB
-        if (   $f == '5330500'
-            || $f == '5346500'
-            || $f == '5357000'
-            || $f == '5371500'
-            || $f == '5403500' )
+        if (   $f == 5330500
+            || $f == 5346500
+            || $f == 5357000
+            || $f == 5371500
+            || $f == 5403500 )
         {
             if ( $textmode ne 'USB' ) {
                 parse_mode('u');
@@ -909,10 +921,13 @@ sub parse_f {
         unless ( $locked || $automode || $scanmode ) {
             print 'Switching to ' . $prettyfreq . ' kHz';
             if ( defined($freqname) && $freqname ne '' ) {
-                print ' (' . $freqname . ')';
+                print ' (' . $c_c . $freqname . $r . ')';
             }
             print "\n";
         }
+
+        # We're changing frequency, update our $lastfreq before we do
+        $lastfreq = $cleanfreq * $freqdiv;
         my $vfo     = $rig->get_vfo();
         my $textvfo = Hamlib::rig_strvfo($vfo);
         if ( $vfo == 1 ) {
@@ -989,18 +1004,18 @@ sub get_bandplan {
     $bandcountry = lc($bandcountry);
     $bandlicense = lc($bandlicense);
 
-    my $privs = 0;
+    my $privs = '0';
 
     # Build up priviledges from the base of novice.  This is of course based
     # on the US band plan.  Other band plans should be easily added and put
     # in their own country section
 
     if ( $bandcountry eq 'usa' ) {
-        if ( $bandlicense eq 'novice' )     { $privs = 1; }
-        if ( $bandlicense eq 'technician' ) { $privs = 2; }
-        if ( $bandlicense eq 'general' )    { $privs = 3; }
-        if ( $bandlicense eq 'advanced' )   { $privs = 4; }
-        if ( $bandlicense eq 'extra' )      { $privs = 5; }
+        if ( $bandlicense eq 'novice' )     { $privs = '1'; }
+        if ( $bandlicense eq 'technician' ) { $privs = '2'; }
+        if ( $bandlicense eq 'general' )    { $privs = '3'; }
+        if ( $bandlicense eq 'advanced' )   { $privs = '4'; }
+        if ( $bandlicense eq 'extra' )      { $privs = '5'; }
 
         if ( $privs == 0 ) {
             print 'Unknown license ' . $bandlicense . "\n";
@@ -1251,6 +1266,7 @@ END
 Auto mode commands
 
 q - Exit auto mode
+Q - Exit script
 l - Lock frequency/mode
 u - Unlock
 Cursor up/down - +/- 1khz
@@ -1290,8 +1306,17 @@ sub color_tags {
         }
     }
 
-    # Other tags to use
+    # Go to start of line, clear entire line
     $cl = "\r\033[2K";
+
+    # Clear from cursor to the end of the screen
+    $clearrestscreen = "\033[J\r";
+
+    # Clear the entire screen
+    $clearscreen = "\033[2J";
+
+    # Move cursor to the 0,0 position
+    $topleft = "\033[0;0H";
 
     return;
 }
@@ -1299,7 +1324,7 @@ sub color_tags {
 # Average a passed-in array
 sub average {
     my ( $signal, @array ) = @_;
-    my $intval = 0.5;
+    my $intval = '0.5';
 
     my $arraycount = @array;
     unless ($arraycount) { return $signal; }
@@ -1312,7 +1337,7 @@ sub average {
         foreach my $item (@array) {
             $sum += $item;
         }
-        $avgtimes = 0;
+        $avgtimes = '0';
         $signal   = int( $sum / @array + .5 );
         if ( $signal < 0 ) { $intval *= -1; }
         $lastavg = $signal;
@@ -1328,9 +1353,7 @@ sub average {
 # Open the hamlib connection
 sub rigopen {
     if ( $rigopens > 25 ) {
-
-        #$whileloop = 0;
-        $autoloop = 0;
+        $autoloop = '0';
     }
     $rigopens++;
     $rig->open();

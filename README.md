@@ -102,6 +102,8 @@ Automatic mode shows in real-time your radio settings and extra information, but
   * Scan up/down
  * q
   * Exit back to Manual mode
+ * Q
+  * Exit script
 
 ### Frequency changes
 
@@ -174,6 +176,7 @@ You may specify **_auto_** as the first command line argument to go directly int
  * Load, modify, and save configuration
   * Modifying would be limited to simple variables, not complex ones like band privileges.
  * Handle FM a little better, right now mode change isn't made if >10mhz and radio mode is FM to fix FM memories getting flipped to USB.
+ * Figure out Home/End better, their ANSI value seems to changed on terminal, in GNU/Screen, etc.  Seems weird.
 
 ### Known Bugs/Limitations
 
