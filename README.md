@@ -156,9 +156,12 @@ The variables which define the band privileges were designed so that the base pr
 
 The script can show you suggested settings for your tuner if you use a manual tuner.  You may add as many sections to the %tuneinfo variable as you like, depending upon your specific tuner and antenna configuration.  If you do not need this information at all you can disable it.
 
-### In-Script configuration variables
+### Band guide
+If you want to define bands to show so you can quickly glance to what band you're on, configure them in rigtool.pm and enable $showbandinfo
 
-The variables which control the script defaults and initialization are at the top of the script and are self-documented and will not be repeated here.  Please modify the script to match your license and other tweaks you might want to change.  If you do a lot of CW mode, you might want to enable the allmodeset variable to switch between CW and Phone modes automatically.
+### Configuration variables
+
+The variables which control the script defaults and initialization are in rigtool.pm and are self-documented and will not be repeated here.  Please modify the config to match your license and other tweaks you might want to change.  If you do a lot of CW mode, you might want to enable the allmodeset variable to switch between CW and Phone modes automatically.
 
 ### Command Line Arguments
 

@@ -6,77 +6,53 @@ use Hamlib;
 use Term::ReadKey;
 use strict;
 use warnings;
+use FindBin;
+use lib $FindBin::Bin;
 
 our $VERSION = '1.1';
+
+# Use our rigtool.pm module and get all of our settings out of it
+use rigtool;
+
+my $hamliburl          = $rigtool::hamliburl;
+my $country            = $rigtool::country;
+my $license            = $rigtool::license;
+my $cw_passband        = $rigtool::cw_passband;
+my $data_passband      = $rigtool::data_passband;
+my $ssb_passband       = $rigtool::ssb_passband;
+my $am_passband        = $rigtool::am_passband;
+my $tune_bottom        = $rigtool::tune_bottom;
+my $tune_top           = $rigtool::tune_top;
+my $enforce_tune_limit = $rigtool::enforce_tune_limit;
+my $cwoffset           = $rigtool::cwoffset;
+my $fautomodeset       = $rigtool::fautomodeset;
+my $allmodeset         = $rigtool::allmodeset;
+my $avgsignal          = $rigtool::avgsignal;
+my $avgsamples         = $rigtool::avgsamples;
+my $showtuneinfo       = $rigtool::showtuneinfo;
+my $showbandinfo       = $rigtool::showbandinfo;
+my $rigopenmax         = $rigtool::rigopenmax;
+my $hzstep             = $rigtool::hzstep;
+my $khzstep            = $rigtool::khzstep;
+my $largestep          = $rigtool::largestep;
+my $scanstep           = $rigtool::scanstep;
+my $scandelay          = $rigtool::scandelay;
+my %tuneinfo           = %rigtool::tuneinfo;
+my %freqnames          = %rigtool::freqnames;
+my %bandnames          = %rigtool::bandnames;
 
 # Comment out to enable hamlib debugging (very noisy)
 Hamlib::rig_set_debug($Hamlib::RIG_DEBUG_NONE);
 
 # Change to your rig type, port, etc
 my $rig = new Hamlib::Rig($Hamlib::RIG_MODEL_NETRIGCTL);
-$rig->set_conf( '', 'localhost:4532' );
-
-# Your call priviledges (sorry, US-only for now, blank this out for elsewhere)
-my $country = 'usa';
-my $license = 'advanced';
-
-# Pass band widths
-my $cw_passband   = '1000';
-my $data_passband = '3000';
-my $ssb_passband  = '3000';
-my $am_passband   = '6000';
-
-# Radio tuning limits
-my $tune_bottom        = '30000';
-my $tune_top           = '56000000';
-my $enforce_tune_limit = '0';
-
-# If your radio offsets when it switches between CW and SSB, you can set that here
-# or set it to 0 if you don't want the script twiddling this on CW/SSB transitions
-my $cwoffset = '700';
-
-# If set to 1, execute auto_mode_set on manual frequency change.  cw/ssb switch
-# depends on $allmodeset setting
-my $fautomodeset = '1';
-
-# If set to 0, do not switch between cw and ssb, but still sets lsb/usb
-# 1 executes auto_mode_set and switches beween cw and ssb as well as sets lsb/usb
-# and in the future perhaps data modes as well
-my $allmodeset = '0';
-
-# Average the last N signals or not
-my $avgsignal = '1';
-
-# How many samples to average
-my $avgsamples = '5';
-
-# Determine if we show tuneinfo or not.  If you have an autotuner or do not need to
-# manually tune you can just set this to 0.  If you do want this information, you
-# will need to modify the %tuneinfo variable in the get_bandplan function
-my $showtuneinfo = '1';
-
-# How many times can we fail opening the port before we give up?
-my $rigopenmax = '25';
-
-# Step sizes for cursor keys in auto mode
-my $hzstep    = '0.1';
-my $khzstep   = '1.0';
-my $largestep = '10';
-
-# Step size for can mode
-my $scanstep = '2.0';
+$rig->set_conf( '', $hamliburl );
 
 # Don't touch below here unless modifying %tuneinfo
 # if you want to modify that
 
 # Define our cw and ssb freqs and get them defined based on license
 my ( @cwfreqs, @datafreqs, @ssbfreqs );
-
-# Define our tuner info
-my %tuneinfo = ();
-
-# Define our frequency names
-my %freqnames = ();
 
 get_bandplan( $country, $license );
 
@@ -163,9 +139,9 @@ sub manual_mode {
 
     # Loop through our prompt while we're running
     while ($whileloop) {
-        my ( $prompt, $tunertext, $extratext ) = create_prompt();
+        my ( $prompt, $tunertext, $extratext, $bandtext ) = create_prompt();
         if ( $tunertext ne '' ) {
-            print $tunertext . "\n";
+            print $tunertext . ' ' . $bandtext . "\n";
         }
         print $prompt . ': ';
         my $input = <STDIN>;
@@ -196,6 +172,7 @@ sub freq_text {
     my $ssbmatch  = '0';
     my $matched   = '';
     my $tunertext = '';
+    my $bandtext  = '';
     my $testfreq  = '1000';
 
     my $f = $rig->get_freq();
@@ -275,6 +252,18 @@ sub freq_text {
         }
     }
 
+    # If set, add band info to prompt text
+    if ($showbandinfo) {
+        for my $key ( keys %bandnames ) {
+            my $value = $bandnames{$key};
+
+            my ( $low, $high ) = split( /-/xms, $key );
+            if ( $f >= $low && $f < $high ) {
+                $bandtext = '(' . $value . ')';
+            }
+        }
+    }
+
     if ( $cwmatch || $datamatch || $ssbmatch ) { $matched = '1'; }
 
     # Pad the frequency to make it look nicer
@@ -292,8 +281,8 @@ sub freq_text {
     unless ( $matched || !defined($license) ) { $outofband = '1'; }
 
     return (
-        $pretty_freq, $cwmatch,   $datamatch,
-        $ssbmatch,    $outofband, $tunertext
+        $pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
+        $outofband,   $tunertext, $bandtext
     );
 }
 
@@ -348,6 +337,13 @@ sub parse_input {
 
     if ( $input =~ /q/xms ) {
         $whileloop = '0';
+        return;
+    }
+
+    if ( $input =~ /set/xms ) {
+        my ( $foo, $data )    = split( /\ /xms, $input );
+        my ( $var, $setting ) = split( /=/xms,  $data );
+        change_setting( $var, $setting );
         return;
     }
 
@@ -452,8 +448,8 @@ sub parse_input {
         if ( $input =~ /^$/xms ) {
             if ( $f != $lastfreq ) {
                 my $freqname = name_from_freq($f);
-                my ($pretty_freq, $cwmatch,   $datamatch,
-                    $ssbmatch,    $outofband, $tunertext
+                my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
+                    $outofband,   $tunertext, $bandtext
                 ) = freq_text();
                 print 'Switched to ' . $pretty_freq . ' kHz';
                 if ( defined($freqname) && $freqname ne '' ) {
@@ -507,18 +503,20 @@ sub auto_mode {
             $extra = '(' . $c_c . $freqname . $r . ') ';
         }
 
-        $extra .= $r . '(Auto mode)';
-        my ( $prompt, $tunertext, $extratext ) = create_prompt($extra);
+        $extra .= $r . '(Auto Mode)';
+        my ( $prompt, $tunertext, $extratext, $bandtext ) = create_prompt($extra);
 
    # TODO:  Fix tunertextextra so I'm not getting the same text back from both
         my ( $pretty_freq, $cwmatch, $datamatch,
-            $ssbmatch, $outofband, $tunertextextra )
+            $ssbmatch, $outofband, $tunertextextra, $bandtextextra )
             = freq_text();
         my $textmode = Hamlib::rig_strrmode($mode);
 
         auto_mode_set( $f, $textmode, $cwmatch, $datamatch, $ssbmatch );
 
-        print $topleft . $cl . $tunertext . ' ' . $extratext . "\n";
+        print $topleft . $cl . $tunertext . "\n";
+
+        print $cl . $extratext . "\n";
 
         print $cl . $prompt;
 
@@ -663,8 +661,8 @@ sub scan {
         # If we were in Auto mode, do a band scan.  If we started out of band,
         # just keep going.
         if ($automode) {
-            my ($pretty_freq, $cwmatch,   $datamatch,
-                $ssbmatch,    $outofband, $tunertext
+            my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
+                $outofband,   $tunertext, $bandtext
             ) = freq_text();
             if ( $scanstart == 1 ) {
                 $scanstart = '0';
@@ -696,11 +694,16 @@ sub scan {
 
         # Every 10 loops, update the prompt
         if ( $loops % 10 ) {
-            my ( $prompt, $tunertext, $extratext ) = create_prompt();
+            my ( $prompt, $tunertext, $extratext, $bandtext ) = create_prompt();
 
             print $topleft;
             print $cl . $tunertext . ' ' . $extratext . "\n";
             print $cl . $prompt . "\r";
+        }
+
+        # If defined, pause a short period between frequencies
+        if ( $scandelay > 0 ) {
+            select( undef, undef, undef, $scandelay );
         }
     }
     ReadMode('normal');
@@ -723,8 +726,8 @@ sub create_prompt {
     }
 
     my $freqcolor = $c_c;
-    my ($pretty_freq, $cwmatch,   $datamatch,
-        $ssbmatch,    $outofband, $tunertext
+    my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
+        $outofband,   $tunertext, $bandtext
     ) = freq_text();
     my ( $mode, $width ) = $rig->get_mode();
     my $textmode = Hamlib::rig_strrmode($mode);
@@ -741,6 +744,11 @@ sub create_prompt {
 
     if ($scanmode) {
         $extra = '(Scanning) ' . $extra;
+    }
+
+    if ($bandtext ne '')
+    {
+        $extra = $extra . ' ' . $bandtext;
     }
 
     if ($outofband) {
@@ -784,7 +792,7 @@ sub create_prompt {
             . $lockstatus
             . $r . ')';
     }
-    return $prompt, $tunertext, $extra;
+    return $prompt, $tunertext, $extra, $bandtext;
 }
 
 # Set the mode based on the frequency we're on when in auto mode
@@ -921,8 +929,8 @@ sub parse_f {
 
         # Auto set mode if manually changing frequency
         if ($fautomodeset) {
-            my ($pretty_freq, $cwmatch,   $datamatch,
-                $ssbmatch,    $outofband, $tunertext
+            my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
+                $outofband,   $tunertext, $bandtext
             ) = freq_text();
             my ( $mode, $width ) = $rig->get_mode();
             my $textmode = Hamlib::rig_strrmode($mode);
@@ -1008,6 +1016,24 @@ sub clean_freq {
     }
 
     return $freq;
+}
+
+# Change a setting
+sub change_setting {
+    my ( $var, $setting ) = @_;
+    print "[$var] [$setting]\n";
+
+    #$var  =~ s/(\$\w+)/$1/eeg;
+    my $newvar = \$var;
+    print "scandelay: $scandelay\n";
+    print '['
+        . $var
+        . '] is currently set to ['
+        . $newvar . ' ' . ' '
+        . $$newvar . ']' . "\n";
+    $$var = $setting;
+    print "scandelay: $scandelay\n";
+    return 0;
 }
 
 # Define our band plans
@@ -1158,52 +1184,6 @@ sub get_bandplan {
             push( @ssbfreqs,  @newssbfreqs );
         }
     }
-
-    # Define our tuner info
-    %tuneinfo = (
-        '1800000-1850000'   => 'A 6.0 4.9',    # 160m
-        '1850000-1950000'   => 'A 5.0 5.0',    # 160m
-        '1950000-2000000'   => 'A 3.9 5.1',    # 160m
-        '3535000-3600000'   => 'L 3.8 4.5',    # 80m
-        '3700000-3900000'   => 'ATU',          # 80m
-        '3900000-4000000'   => 'L 3.0 4.0',    # 80m
-        '5330500-5403500'   => 'K 2.9 1.0',    # 60m
-        '7025000-7125000'   => 'I 1.2 5.0',    # 40m
-        '7125000-7180000'   => 'I 2.2 4.9',    # 40m
-        '7180000-7220000'   => 'I 2.1 4.2',    # 40m
-        '7220000-7300000'   => 'I 2.1 4.0',    # 40m
-        '10100000-10150000' => 'G 2.8 4.0',    # 30m
-        '14025000-14350000' => 'ATU',          # 20m
-        '18068000-18168000' => 'C 2.0 0.5',    # 17m
-        '21025000-21450000' => 'ATU',          # 15m
-        '24890000-24990000' => 'ATU',          # 12m
-        '28000000-29700000' => 'Direct',       # 10m
-        '50000000-51000000' => 'C 0.2 2.2',    # 6m
-        '51000000-52000000' => 'B 3.0 2.2',    # 6m
-        '52000000-53000000' => 'B 6.0 2.0',    # 6m
-        '53000000-54000000' => 'UNKNOWN'       # 6m
-    );
-
-    # Define our frequency names
-    %freqnames = (
-        '5330500'  => '60M CH1',
-        '5346500'  => '60M CH2',
-        '5357000'  => '60M CH3/JT65',
-        '5371500'  => '60M CH4',
-        '5403500'  => '60M CH5',
-        '1838000'  => '160M JT65',
-        '3576000'  => '80M JT65',
-        '7076000'  => '40M JT65',
-        '10138000' => '30M JT65',
-        '14076000' => '20M JT65',
-        '18102000' => '17M JT65',
-        '21076000' => '15M JT65',
-        '24917000' => '12M JT65',
-        '28076000' => '10M JT65',
-        '14200000' => 'Analog SSTV',
-        '14233000' => 'Digital SSTV',
-        '7200000'  => '40M Lids',
-    );
 
     return;
 }
