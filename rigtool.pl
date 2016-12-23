@@ -569,7 +569,7 @@ sub auto_mode {
             parse_f($tmpf);
         }
 
-        # Left; Down 10hz
+        # Down 10hz
         if ( $char =~ /$hzdownkey/xms ) {
             $tmpf -= $hzstep;
             parse_f($tmpf);
@@ -593,32 +593,30 @@ sub auto_mode {
             parse_f($tmpf);
         }
 
-        # Down 15hz
+        # Down 5hz
         if ( $char =~ /$fivekhzdownkey/xms ) {
             $tmpf -= $fivekhzstep;
             parse_f($tmpf);
         }
 
-        # Home; up 10khz
+        # Up 10khz
         if ( $char =~ /$largeupkey/xms ) {
             $tmpf += $largestep;
             parse_f($tmpf);
         }
 
-        # End; down 10khz
+        # Down 10khz
         if ( $char =~ /$largedownkey/xms ) {
             $tmpf -= $largestep;
             parse_f($tmpf);
         }
 
-     # Home; scan up.    Seems to be 1, 7, or H depending on shell environment
-     #if ( $char =~ /$scanupkey/xms || $char =~ /7/xms || $char =~ /H/xms ) {
+        # Scan up
         if ( $char =~ /$scanupkey/xms ) {
             scan( $tmpf, 0, 'up' );
         }
 
-    # End; scan down.  4, 8, or F
-    #if ( $char =~ /$scandownkey/xms || $char =~ /8/xms || $char =~ /F/xms ) {
+        # Scan down
         if ( $char =~ /$scandownkey/xms ) {
             scan( $tmpf, 0, 'down' );
         }
