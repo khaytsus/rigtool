@@ -97,8 +97,10 @@ Automatic mode shows in real-time your radio settings and extra information, but
  * Cursor up/down
   * Change frequency +/- 1khz
  * Page up/down
-  * Change frequency +/- 10khz
+  * Change frequency +/- 5khz
  * Home up/down
+  * Change frequency +/- 10khz
+ * Insert/Delete
   * Scan up/down
  * q
   * Exit back to Manual mode
@@ -162,6 +164,10 @@ If you want to define bands to show so you can quickly glance to what band you'r
 ### Configuration variables
 
 The variables which control the script defaults and initialization are in rigtool.pm and are self-documented and will not be repeated here.  Please modify the config to match your license and other tweaks you might want to change.  If you do a lot of CW mode, you might want to enable the allmodeset variable to switch between CW and Phone modes automatically.
+
+### Keyboard keys
+
+Every terminal seems to have slightyly different keyboard scancodes, so the ones I have pre-set might not be appropriate for you, or perhaps you want to change them.  Using the command showkey -a will show the input keycodes the script is looking for and you can update them in the module to match your keys.  Note that the keys in the module are actually a regular expression, so for example the scan up key is [17H] which means it'll match a key input of 1, 7, or H.  I did this because I've found the page up/down keys seem to vary in urxvt, xfce terminal, in tmux, etc, but it also adds flexability for you to specify the keycode you want.  Note that direct keys will work here too, ie:  page up might be a keycode with 1, 7, or H in it, but just typing 1, 7, or H will also work.  So you can map to any key on the keyboard you want.
 
 ### Command Line Arguments
 

@@ -34,9 +34,20 @@ my $showbandinfo       = $rigtool::showbandinfo;
 my $rigopenmax         = $rigtool::rigopenmax;
 my $hzstep             = $rigtool::hzstep;
 my $khzstep            = $rigtool::khzstep;
+my $fivekhzstep        = $rigtool::fivekhzstep;
 my $largestep          = $rigtool::largestep;
+my $hzupkey            = $rigtool::hzupkey;
+my $hzdownkey          = $rigtool::hzdownkey;
+my $khzupkey           = $rigtool::khzupkey;
+my $khzdownkey         = $rigtool::khzdownkey;
+my $fivekhzupkey       = $rigtool::fivekhzupkey;
+my $fivekhzdownkey     = $rigtool::fivekhzdownkey;
+my $largeupkey         = $rigtool::largeupkey;
+my $largedownkey       = $rigtool::largedownkey;
 my $scanstep           = $rigtool::scanstep;
 my $scandelay          = $rigtool::scandelay;
+my $scanupkey          = $rigtool::scanupkey;
+my $scandownkey        = $rigtool::scandownkey;
 my %tuneinfo           = %rigtool::tuneinfo;
 my %freqnames          = %rigtool::freqnames;
 my %bandnames          = %rigtool::bandnames;
@@ -45,7 +56,7 @@ my %bandnames          = %rigtool::bandnames;
 Hamlib::rig_set_debug($Hamlib::RIG_DEBUG_NONE);
 
 # Change to your rig type, port, etc
-my $rig = new Hamlib::Rig($Hamlib::RIG_MODEL_NETRIGCTL);
+my $rig = Hamlib::Rig->new($Hamlib::RIG_MODEL_NETRIGCTL);
 $rig->set_conf( '', $hamliburl );
 
 # Don't touch below here unless modifying %tuneinfo
@@ -144,7 +155,7 @@ sub manual_mode {
             print $tunertext . ' ' . $bandtext . "\n";
         }
         print $prompt . ': ';
-        my $input = <STDIN>;
+        my $input = <ARGV>;
         chomp $input;
         $input = lc($input);
         parse_input($input);
@@ -155,6 +166,7 @@ sub manual_mode {
             parse_mode($quickmode);
         }
     }
+    return;
 }
 
 # We only expect to open the connection once, any more is something buggy
@@ -181,6 +193,7 @@ sub freq_text {
     if ( $f < $testfreq ) {
         rigclose();
         rigopen();
+        return ( 0, 0, 0, 0, 0, '', '' );
     }
 
     foreach my $item (@cwfreqs) {
@@ -504,7 +517,8 @@ sub auto_mode {
         }
 
         $extra .= $r . '(Auto Mode)';
-        my ( $prompt, $tunertext, $extratext, $bandtext ) = create_prompt($extra);
+        my ( $prompt, $tunertext, $extratext, $bandtext )
+            = create_prompt($extra);
 
    # TODO:  Fix tunertextextra so I'm not getting the same text back from both
         my ( $pretty_freq, $cwmatch, $datamatch,
@@ -549,49 +563,63 @@ sub auto_mode {
         # so just look for what the ANSI code has in it
         my $tmpf = $f / $freqdiv;
 
-        # Right; Up 10hz
-        if ( $char =~ /C/xms ) {
+        # Up 10hz
+        if ( $char =~ /$hzupkey/xms ) {
             $tmpf += $hzstep;
             parse_f($tmpf);
         }
 
         # Left; Down 10hz
-        if ( $char =~ /D/xms ) {
+        if ( $char =~ /$hzdownkey/xms ) {
             $tmpf -= $hzstep;
             parse_f($tmpf);
         }
 
-        # Up; Up 1khz
-        if ( $char =~ /A/xms ) {
+        # Up 1khz
+        if ( $char =~ /$khzupkey/xms ) {
             $tmpf += $khzstep;
             parse_f($tmpf);
         }
 
-        # Down; Down 1khz
-        if ( $char =~ /B/xms ) {
+        # Down 1khz
+        if ( $char =~ /$khzdownkey/xms ) {
             $tmpf -= $khzstep;
             parse_f($tmpf);
         }
 
-        # Page Up; up 10khz
-        if ( $char =~ /5/xms ) {
+        # Up 5khz
+        if ( $char =~ /$fivekhzupkey/xms ) {
+            $tmpf += $fivekhzstep;
+            parse_f($tmpf);
+        }
+
+        # Down 15hz
+        if ( $char =~ /$fivekhzdownkey/xms ) {
+            $tmpf -= $fivekhzstep;
+            parse_f($tmpf);
+        }
+
+        # Home; up 10khz
+        if ( $char =~ /$largeupkey/xms ) {
             $tmpf += $largestep;
             parse_f($tmpf);
         }
 
-        # Page Down; down 10khz
-        if ( $char =~ /6/xms ) {
+        # End; down 10khz
+        if ( $char =~ /$largedownkey/xms ) {
             $tmpf -= $largestep;
             parse_f($tmpf);
         }
 
      # Home; scan up.    Seems to be 1, 7, or H depending on shell environment
-        if ( $char =~ /1/xms || $char =~ /7/xms || $char =~ /H/xms ) {
+     #if ( $char =~ /$scanupkey/xms || $char =~ /7/xms || $char =~ /H/xms ) {
+        if ( $char =~ /$scanupkey/xms ) {
             scan( $tmpf, 0, 'up' );
         }
 
-        # End; scan down.  4, 8, or F
-        if ( $char =~ /4/xms || $char =~ /8/xms || $char =~ /F/xms ) {
+    # End; scan down.  4, 8, or F
+    #if ( $char =~ /$scandownkey/xms || $char =~ /8/xms || $char =~ /F/xms ) {
+        if ( $char =~ /$scandownkey/xms ) {
             scan( $tmpf, 0, 'down' );
         }
 
@@ -694,7 +722,8 @@ sub scan {
 
         # Every 10 loops, update the prompt
         if ( $loops % 10 ) {
-            my ( $prompt, $tunertext, $extratext, $bandtext ) = create_prompt();
+            my ( $prompt, $tunertext, $extratext, $bandtext )
+                = create_prompt();
 
             print $topleft;
             print $cl . $tunertext . ' ' . $extratext . "\n";
@@ -737,6 +766,11 @@ sub create_prompt {
     $textvfo =~ tr/ABM\.//cd;
     $lastvfo = $textvfo;
 
+# Sometimes we seem to get nonsense, set pretty_freq to 0 to avoid ugly errors
+    if ( $pretty_freq eq '' ) {
+        $pretty_freq = 0;
+    }
+
     # Only store A/B, don't store M
     if ( $textvfo ne 'M' ) { $lastvfo = $textvfo; }
     my $lockstatus = $c_g . 'U';
@@ -746,8 +780,7 @@ sub create_prompt {
         $extra = '(Scanning) ' . $extra;
     }
 
-    if ($bandtext ne '')
-    {
+    if ( $bandtext ne '' ) {
         $extra = $extra . ' ' . $bandtext;
     }
 

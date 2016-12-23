@@ -49,9 +49,24 @@ our $showbandinfo = '1';
 our $rigopenmax = '25';
 
 # Step sizes for cursor keys in auto mode
-our $hzstep    = '0.1';
-our $khzstep   = '1.0';
-our $largestep = '10';
+our $hzstep      = '0.1';
+our $khzstep     = '1.0';
+our $fivekhzstep = '5.0';
+our $largestep   = '10.0';
+
+# Step keys
+our $hzupkey        = 'C';
+our $hzdownkey      = 'D';
+our $khzupkey       = 'A';
+our $khzdownkey     = 'B';
+our $fivekhzupkey   = '5';
+our $fivekhzdownkey = '6';
+our $largeupkey     = '[17H]';
+our $largedownkey   = '[48F]';
+
+# Scan keys
+our $scanupkey   = '2';
+our $scandownkey = '3';
 
 # Step size for scan mode
 our $scanstep = '2.0';
@@ -115,19 +130,25 @@ our %oldtuneinfo = (
 
 # Define our (optional) frequency names
 our %freqnames = (
+    '1838000'  => '160M JT65',
+    '2500000'  => 'WWV 2MHZ',
+    '5000000'  => 'WWV 5MHZ',
+    '3576000'  => '80M JT65',
     '5330500'  => '60M CH1',
     '5346500'  => '60M CH2',
     '5357000'  => '60M CH3/JT65',
     '5371500'  => '60M CH4',
     '5403500'  => '60M CH5',
-    '1838000'  => '160M JT65',
-    '3576000'  => '80M JT65',
     '7076000'  => '40M JT65',
+    '10000000' => 'WWV 10MHZ',
     '10138000' => '30M JT65',
     '14076000' => '20M JT65',
+    '15000000' => 'WWV15MHZ',
     '18102000' => '17M JT65',
+    '20000000' => 'WWV 20MHZ',
     '21076000' => '15M JT65',
     '24917000' => '12M JT65',
+    '25000000' => 'WWV 25MHZ',
     '28076000' => '10M JT65',
     '14200000' => 'Analog SSTV',
     '14233000' => 'Digital SSTV',
@@ -139,17 +160,17 @@ our %freqnames = (
 
 # Define our (optional) band names
 our %bandnames = (
-    '1800000-2000000'  => '160M',
-    '3500000-4000000'  => '80M',
-    '5330500-5403500'  => '60M',
-    '7000000-7300000'  => '40M',
-    '10100000-10150000'  => '30M',
-    '14000000-14350000'  => '20M',
-    '18068000-18168000'  => '17M',
-    '21000000-21450000'  => '15M',
-    '24890000-24990000'  => '12M',
-    '28000000-29700000'  => '10M',
-    '50000000-54000000'  => '6M',
+    '1800000-2000000'   => '160M',
+    '3500000-4000000'   => '80M',
+    '5330500-5403500'   => '60M',
+    '7000000-7300000'   => '40M',
+    '10100000-10150000' => '30M',
+    '14000000-14350000' => '20M',
+    '18068000-18168000' => '17M',
+    '21000000-21450000' => '15M',
+    '24890000-24990000' => '12M',
+    '28000000-29700000' => '10M',
+    '50000000-54000000' => '6M',
 );
 
 1;
