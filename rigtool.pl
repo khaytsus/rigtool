@@ -155,7 +155,7 @@ sub manual_mode {
             print $tunertext . ' ' . $bandtext . "\n";
         }
         print $prompt . ': ';
-        my $input = <ARGV>;
+        my $input = <STDIN>;
         chomp $input;
         $input = lc($input);
         parse_input($input);
