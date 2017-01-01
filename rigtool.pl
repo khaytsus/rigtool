@@ -930,7 +930,17 @@ sub parse_mode {
     if ( $input =~ /d/xms ) {
         $output = 'DATA';
         if ( $textmode eq $output ) { return; }
-        $rig->set_mode( $Hamlib::RIG_MODE_RTTY, $data_passband );
+        $rig->set_mode( $Hamlib::RIG_MODE_PKTUSB, $data_passband );
+    }
+    if ( $input =~ /du/xms ) {
+        $output = 'DATA';
+        if ( $textmode eq $output ) { return; }
+        $rig->set_mode( $Hamlib::RIG_MODE_PKTUSB, $data_passband );
+    }
+    if ( $input =~ /dl/xms ) {
+        $output = 'DATA';
+        if ( $textmode eq $output ) { return; }
+        $rig->set_mode( $Hamlib::RIG_MODE_PKTLSB, $data_passband );
     }
     if ( $input =~ /am/xms ) {
         $output = 'AM';
