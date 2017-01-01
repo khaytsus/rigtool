@@ -26,6 +26,11 @@ our $cwoffset = '700';
 # depends on $allmodeset setting
 our $fautomodeset = '1';
 
+# If specified and the radio is set to this mode, do not force change modes if
+# auto_mode_set is used.  This prevents things like WSJT-X switching to Data mode
+# for JT65 and the script changing it back to USB.
+our $bypassdatamode = '[PKT.SB]';
+
 # If set to 0, do not switch between cw and ssb, but still sets lsb/usb
 # 1 executes auto_mode_set and switches beween cw and ssb as well as sets lsb/usb
 # and in the future perhaps data modes as well
@@ -128,33 +133,35 @@ our %oldtuneinfo = (
     '53000000-54000000' => 'F 1.2 3.6'     # 6m
 );
 
-# Define our (optional) frequency names
+# Define our (optional) frequency names.  If the channel does not conform to
+# the standard <10Mhz LSB rule (such as data modes), add the specific mode
+# use after the frequency, such as 7070000|d
 our %freqnames = (
-    '1838000'  => '160M JT65',
-    '2500000'  => 'WWV 2MHZ',
-    '5000000'  => 'WWV 5MHZ',
-    '3576000'  => '80M JT65',
+    '1838000|d'  => '160M JT65',
+    '2500000|am'  => 'WWV 2MHZ',
+    '5000000|am'  => 'WWV 5MHZ',
+    '3576000|d'  => '80M JT65',
     '5330500'  => '60M CH1',
     '5346500'  => '60M CH2',
     '5357000'  => '60M CH3/JT65',
     '5371500'  => '60M CH4',
     '5403500'  => '60M CH5',
-    '7070000'  => '40M PSK31',
-    '7076000'  => '40M JT65',
-    '10000000' => 'WWV 10MHZ',
-    '10138000' => '30M JT65',
-    '10142150' => '30M PSK31',
-    '14070150' => '20M PSK31',
-    '14076000' => '20M JT65',
-    '15000000' => 'WWV 15MHZ',
-    '18102000' => '17M JT65',
-    '20000000' => 'WWV 20MHZ',
-    '21076000' => '15M JT65',
-    '24917000' => '12M JT65',
-    '25000000' => 'WWV 25MHZ',
-    '28076000' => '10M JT65',
-    '14200000' => 'Analog SSTV',
-    '14233000' => 'Digital SSTV',
+    '7070000|d'  => '40M PSK31',
+    '7076000|d'  => '40M JT65',
+    '10000000|am' => 'WWV 10MHZ',
+    '10138000|d' => '30M JT65',
+    '10142150|d' => '30M PSK31',
+    '14070150|d' => '20M PSK31',
+    '14076000|d' => '20M JT65',
+    '15000000|am' => 'WWV 15MHZ',
+    '18102000|d' => '17M JT65',
+    '20000000|am' => 'WWV 20MHZ',
+    '21076000|d' => '15M JT65',
+    '24917000|d' => '12M JT65',
+    '25000000|am' => 'WWV 25MHZ',
+    '28076000|d' => '10M JT65',
+    '14200000|d' => 'Analog SSTV',
+    '14233000|d' => 'Digital SSTV',
     '28450000' => '10M Call',
     '7200000'  => '40M Lids',
     '3840000'  => '80M Lids',

@@ -26,6 +26,7 @@ my $tune_top           = $rigtool::tune_top;
 my $enforce_tune_limit = $rigtool::enforce_tune_limit;
 my $cwoffset           = $rigtool::cwoffset;
 my $fautomodeset       = $rigtool::fautomodeset;
+my $bypassdatamode     = $rigtool::bypassdatamode;
 my $allmodeset         = $rigtool::allmodeset;
 my $avgsignal          = $rigtool::avgsignal;
 my $avgsamples         = $rigtool::avgsamples;
@@ -182,6 +183,9 @@ elsif ( $rigopens > 1 ) {
 
 # Clean up
 sub freq_text {
+
+    my ($passedfreq) = @_;
+
     my $cwmatch   = '0';
     my $datamatch = '0';
     my $ssbmatch  = '0';
@@ -189,8 +193,15 @@ sub freq_text {
     my $tunertext = '';
     my $bandtext  = '';
     my $testfreq  = '1000';
+    my $f         = $testfreq;
 
-    my $f = $rig->get_freq();
+    # If we were passed a frequency, find the info for it, not the tuned one
+    if ( defined($passedfreq) ) {
+        $f = $passedfreq;
+    }
+    else {
+        $f = $rig->get_freq();
+    }
 
     # Sometimes we seem to get nonsense, try to cycle the connection
     if ( $f < $testfreq ) {
@@ -369,9 +380,12 @@ sub parse_input {
     if ( $input =~ /chan/xms ) {
         my ( $command, @channel ) = split( /\ /xms, $input );
         my $channel = join( " ", @channel );
-        my $freq = freq_from_name($channel);
+        my ( $freq, $mode ) = freq_from_name($channel);
         if ( defined($freq) && $freq != 0 ) {
             parse_f($freq);
+            if ( $mode ne "" ) {
+                parse_mode($mode);
+            }
             $storelastinput++;
         }
         $skip++;
@@ -529,7 +543,11 @@ sub auto_mode {
             = freq_text();
         my $textmode = Hamlib::rig_strrmode($mode);
 
-        auto_mode_set( $f, $textmode, $cwmatch, $datamatch, $ssbmatch );
+        # If the mode matches the bypassdatamode expression, don't switch modes
+        if ($textmode !~ /\Q$bypassdatamode/)
+        {
+            auto_mode_set( $f, $textmode, $cwmatch, $datamatch, $ssbmatch );
+        }
 
         print $topleft . $cl . $tunertext . "\n";
 
@@ -972,10 +990,14 @@ sub parse_f {
     if ( $cleanfreq > 0 ) {
 
         # Auto set mode if manually changing frequency
+        # We need to pass it the frequency here so it doesn't use the one
+        # on the radio since we're not setting it until later.
+        # TODO: Make sure this is sane.
         if ($fautomodeset) {
             my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
                 $outofband,   $tunertext, $bandtext
-            ) = freq_text();
+            ) = freq_text($cleanfreq);
+
             my ( $mode, $width ) = $rig->get_mode();
             my $textmode = Hamlib::rig_strrmode($mode);
 
@@ -1250,8 +1272,8 @@ sub name_from_freq {
 
 # Give back a frequency if the channel name is known
 sub freq_from_name {
-    my ($channel)    = @_;
-    my @channelarray = ();
+    my ($channel)     = @_;
+    my @channelarray  = ();
     my $channelsfound = 0;
 
     # Iterate through our freqnames hash looking for matching channels
@@ -1267,9 +1289,9 @@ sub freq_from_name {
 
         # Sort the array for humans
         @channelarray = sort(@channelarray);
+
         # Find out how many channel matches we found
         $channelsfound = @channelarray;
-
     }
 
     # If we matched at least one channel, figure out the next best channel
@@ -1321,10 +1343,17 @@ sub freq_from_name {
                 my $value = $freqnames{$key};
                 $value   = lc($value);
                 $channel = lc($channel);
+                my $mode = '';
 
                 if ( $value =~ /\Q$newchannel/xms ) {
                     $lastchannel = $value;
-                    return $key / $freqdiv;
+
+                    # If a specific mode has been specified, split it out
+                    if ( $key =~ /\|/xms ) {
+                        ( $key, $mode ) = split( '\|', $key );
+                    }
+                    my $returnfreq = $key / $freqdiv;
+                    return ( $returnfreq, $mode );
                 }
             }
         }
