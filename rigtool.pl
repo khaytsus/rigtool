@@ -87,6 +87,9 @@ my $lastvfo = '';
 # Keep track of our last input so we can use a repeat command later
 my $lastinput = '';
 
+# Keep track of our last channel so we can rotate through them
+my $lastchannel = '';
+
 # Check to see if we have the Term::ANSIColor module so it's not a hard requirement
 my $ansi = eval {
     require Term::ANSIColor;
@@ -1247,19 +1250,101 @@ sub name_from_freq {
 
 # Give back a frequency if the channel name is known
 sub freq_from_name {
-    my ($channel) = @_;
+    my ($channel)    = @_;
+    my @channelarray = ();
+    my $channelsfound = 0;
+
+    # Iterate through our freqnames hash looking for matching channels
+    # and store them in @chanmatch
     for my $key ( keys %freqnames ) {
         my $value = $freqnames{$key};
         $value   = lc($value);
         $channel = lc($channel);
 
-        # Allow a substring match
         if ( $value =~ /\Q$channel/xms ) {
-            return $key / $freqdiv;
+            push( @channelarray, $value );
+        }
+
+        # Sort the array for humans
+        @channelarray = sort(@channelarray);
+        # Find out how many channel matches we found
+        $channelsfound = @channelarray;
+
+    }
+
+    # If we matched at least one channel, figure out the next best channel
+    # to switch to.
+    if ($channelsfound) {
+        my $preindex            = 0;
+        my $currentchannelindex = -1;
+        my $channelmatched      = 0;
+        my $index               = 0;
+        my $newchannel          = '';
+
+        # First, find out where we are in our array
+        foreach (@channelarray) {
+            my $preindexfoundchannel = $_;
+
+            if ( $preindexfoundchannel eq $lastchannel ) {
+                $currentchannelindex = $preindex;
+            }
+            else {
+                $preindex++;
+            }
+        }
+
+        # Now that we know where our current channel is in the array, interate
+        # through the array until we reach the next channel
+        foreach (@channelarray) {
+            my $foundchannel = $_;
+
+            unless ($channelmatched) {
+
+               # If the array index is above the current channel, switch to it
+                if ( $index > $currentchannelindex ) {
+                    $newchannel = $foundchannel;
+                    $channelmatched++;
+                }
+                else {
+                    $index++;
+                }
+
+                # If we're at the end of the array, change to the first match
+                if ( $index >= $channelsfound ) {
+                    $newchannel = $channelarray[0];
+                    $channelmatched++;
+                }
+            }
+
+            # Change to the channel we identified to go to
+            for my $key ( keys %freqnames ) {
+                my $value = $freqnames{$key};
+                $value   = lc($value);
+                $channel = lc($channel);
+
+                if ( $value =~ /\Q$newchannel/xms ) {
+                    $lastchannel = $value;
+                    return $key / $freqdiv;
+                }
+            }
+        }
+    }
+    else {
+        if ( $channel ne "" ) {
+            print 'Unknown channel:  ' . $channel . "\n";
         }
     }
 
-    print 'Unknown channel:  ' . $channel . "\n";
+    # If no channel passed, print our known channels
+    if ( $channel eq "" ) {
+        for my $key ( keys %freqnames ) {
+            my $value = $freqnames{$key};
+            $value   = lc($value);
+            $channel = lc($channel);
+            print $value . "\n";
+        }
+    }
+
     return;
 }
 
@@ -1276,6 +1361,8 @@ auto - Switch to autotune mode
    l - Switch to Lower Side Band
    c - Switch to CW
   am - Switch to AM
+   d - Switch to USB Data Mode
+  dl - Switch to LSB Data mode
    a - Switch to VFO A
    b - Switch to VFO B
    r - Revert to last freq/mode

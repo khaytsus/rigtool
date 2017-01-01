@@ -126,7 +126,7 @@ There are two variables in the script, $tune_bottom and $tune_top, which when se
 
 If %freqnames is defined and the frequency matches, it will add the known name of the frequency to the response.
 
-You can also use the 'chan' command to change to a named channel, such as 'chan 60m ch1'.  Performs a substring match, but may return unexpected results if there are multiple matches as the internal ordering of a Perl hash is not guaranteed.
+You can also use the 'chan' command to change to a named channel, such as 'chan 60m ch1'.  It does a case-insensitive substring match, so 'chan 60m' would find all channels with the text "60m" in them.  The last known channel is stored and if there are multiple matches for your search, such as you have defined all of the 60M frequencies, 'chan 60m' will change to the next one in the list.  You can use the ! (repeat) command to keep flipping them through to find the one you want.
 
 ### Scan mode
 
@@ -161,6 +161,7 @@ The variables which define the band privileges were designed so that the base pr
 The script can show you suggested settings for your tuner if you use a manual tuner.  You may add as many sections to the %tuneinfo variable as you like, depending upon your specific tuner and antenna configuration.  If you do not need this information at all you can disable it.
 
 ### Band guide
+
 If you want to define bands to show so you can quickly glance to what band you're on, configure them in rigtool.pm and enable $showbandinfo
 
 ### Configuration variables
@@ -187,7 +188,6 @@ You may specify **_auto_** as the first command line argument to go directly int
  * Load, modify, and save configuration
   * Modifying would be limited to simple variables, not complex ones like band privileges.
  * Handle FM a little better, right now mode change isn't made if >10mhz and radio mode is FM to fix FM memories getting flipped to USB.
- * Figure out Home/End better, their ANSI value seems to changed on terminal, in GNU/Screen, etc.  Seems weird.
 
 ### Known Bugs/Limitations
 
