@@ -79,6 +79,12 @@ our $scanstep = '2.0';
 # Scan delay, in seconds
 our $scandelay = '.1';
 
+# If you want to have color output, set this to 1
+our $coloroutput = '1';
+
+# If you're using a dark terminal background, set light = 0
+our $lightterm = '0';
+
 # Define 60M for our bandplan
 our @sixtymfreqs = ( '5330500', '5346500', '5357000', '5371500', '5403500' );
 

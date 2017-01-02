@@ -49,6 +49,8 @@ my $scanstep           = $rigtool::scanstep;
 my $scandelay          = $rigtool::scandelay;
 my $scanupkey          = $rigtool::scanupkey;
 my $scandownkey        = $rigtool::scandownkey;
+my $coloroutput        = $rigtool::coloroutput;
+my $lightterm          = $rigtool::lightterm;
 my @sixtymfreqs        = @rigtool::sixtymfreqs;
 my %tuneinfo           = %rigtool::tuneinfo;
 my %freqnames          = %rigtool::freqnames;
@@ -106,11 +108,7 @@ my $ansi = eval {
 my ( $r, $c_r, $c_g, $c_c, $c_m, $c_b, $c_y, $cl,
     $clearrestscreen, $clearscreen, $topleft );
 
-# Use color output
-my $coloroutput = '1';
-
-# Dark terminal background, set light = 0
-my $light = '0';
+# Set up our color tags
 color_tags();
 
 # Lock the mode (set it back if it's changed on the radio)
@@ -512,6 +510,7 @@ sub parse_input {
 
 # Change mode based on current frequency
 sub auto_mode {
+
     $automode = '1';
     ReadMode('cbreak');
 
@@ -876,7 +875,7 @@ sub auto_mode_set {
         }
 
         # Handle 60m; it's always USB for SSB
-        if ( grep(/$f/xms, @sixtymfreqs) ) {
+        if ( grep( /$f/xms, @sixtymfreqs ) ) {
             if ( $textmode ne 'USB' ) {
                 parse_mode('u');
             }
@@ -1288,7 +1287,7 @@ sub color_tags {
         $r = RESET();
 
         # Don't use bright colors on a light terminal theme
-        if ($light) {
+        if ($lightterm) {
             $c_r = RED();
             $c_g = GREEN();
             $c_c = CYAN();
