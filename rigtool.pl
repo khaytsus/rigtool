@@ -174,14 +174,6 @@ sub manual_mode {
     return;
 }
 
-# We only expect to open the connection once, any more is something buggy
-if ( $rigopens > $rigopenmax ) {
-    print "Something wrong with rigctld?  Tried to cycle $rigopens times\n";
-}
-elsif ( $rigopens > 1 ) {
-    print "We opened the hamlib connection $rigopens times\n";
-}
-
 # Clean up
 sub freq_text {
 
@@ -381,11 +373,11 @@ sub parse_input {
     if ( $input =~ /chan/xms ) {
         my ( $command, @channel ) = split( /\ /xms, $input );
         my $channel = join( " ", @channel );
-        my ( $freq, $mode ) = freq_from_name($channel);
+        my ( $freq, $chanmode ) = freq_from_name($channel);
         if ( defined($freq) && $freq != 0 ) {
             parse_f($freq);
-            if ( $mode ne "" ) {
-                parse_mode($mode);
+            if ( $chanmode ne "" ) {
+                parse_mode($chanmode);
             }
             $storelastinput++;
         }
