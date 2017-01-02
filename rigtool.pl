@@ -543,8 +543,10 @@ sub auto_mode {
             = freq_text();
         my $textmode = Hamlib::rig_strrmode($mode);
 
-        # If the mode matches the bypassdatamode expression, don't switch modes
-        if ($textmode !~ /$bypassdatamode/xms)
+       # If the mode matches the bypassdatamode expression, don't switch modes
+        unless ( defined($bypassdatamode)
+            && $bypassdatamode ne ""
+            && $textmode =~ /$bypassdatamode/xms )
         {
             auto_mode_set( $f, $textmode, $cwmatch, $datamatch, $ssbmatch );
         }
