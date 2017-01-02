@@ -79,6 +79,9 @@ our $scanstep = '2.0';
 # Scan delay, in seconds
 our $scandelay = '.1';
 
+# Define 60M for our bandplan
+our @sixtymfreqs = ( '5330500', '5346500', '5357000', '5371500', '5403500' );
+
 # Define our (optional) tuner info
 our %tuneinfo = (
     '1800000-1900000'   => 'A 6.0 5.5',     # 160m
@@ -137,35 +140,35 @@ our %oldtuneinfo = (
 # the standard <10Mhz LSB rule (such as data modes), add the specific mode
 # use after the frequency, such as 7070000|d
 our %freqnames = (
-    '1838000|d'  => '160M JT65',
+    '1838000|d'   => '160M JT65',
     '2500000|am'  => 'WWV 2MHZ',
     '5000000|am'  => 'WWV 5MHZ',
-    '3576000|d'  => '80M JT65',
-    '5330500'  => '60M CH1',
-    '5346500'  => '60M CH2',
-    '5357000'  => '60M CH3/JT65',
-    '5371500'  => '60M CH4',
-    '5403500'  => '60M CH5',
-    '7070000|d'  => '40M PSK31',
-    '7076000|d'  => '40M JT65',
+    '3576000|d'   => '80M JT65',
+    '5330500'     => '60M CH1',
+    '5346500'     => '60M CH2',
+    '5357000'     => '60M CH3/JT65',
+    '5371500'     => '60M CH4',
+    '5403500'     => '60M CH5',
+    '7070000|d'   => '40M PSK31',
+    '7076000|d'   => '40M JT65',
     '10000000|am' => 'WWV 10MHZ',
-    '10138000|d' => '30M JT65',
-    '10142150|d' => '30M PSK31',
-    '14070150|d' => '20M PSK31',
-    '14076000|d' => '20M JT65',
+    '10138000|d'  => '30M JT65',
+    '10142150|d'  => '30M PSK31',
+    '14070150|d'  => '20M PSK31',
+    '14076000|d'  => '20M JT65',
     '15000000|am' => 'WWV 15MHZ',
-    '18102000|d' => '17M JT65',
+    '18102000|d'  => '17M JT65',
     '20000000|am' => 'WWV 20MHZ',
-    '21076000|d' => '15M JT65',
-    '24917000|d' => '12M JT65',
+    '21076000|d'  => '15M JT65',
+    '24917000|d'  => '12M JT65',
     '25000000|am' => 'WWV 25MHZ',
-    '28076000|d' => '10M JT65',
-    '14200000|d' => 'Analog SSTV',
-    '14233000|d' => 'Digital SSTV',
-    '28450000' => '10M Call',
-    '7200000'  => '40M Lids',
-    '3840000'  => '80M Lids',
-    '8472000'  => 'WLO Marine',
+    '28076000|d'  => '10M JT65',
+    '14200000|d'  => 'Analog SSTV',
+    '14233000|d'  => 'Digital SSTV',
+    '28450000'    => '10M Call',
+    '7200000'     => '40M Lids',
+    '3840000'     => '80M Lids',
+    '8472000'     => 'WLO Marine',
 );
 
 # Define our (optional) band names
@@ -182,5 +185,157 @@ our %bandnames = (
     '28000000-29700000' => '10M',
     '50000000-54000000' => '6M',
 );
+
+# Define our band plans
+# datafreqs isn't really used right now, but define it.  Multiple flags can
+# be active as there is usage overlap such a data/cw, ssb/cw etc
+sub get_bandplan {
+    my ( $bandcountry, $bandlicense ) = @_;
+    $bandcountry = lc($bandcountry);
+    $bandlicense = lc($bandlicense);
+
+    my $privs = '0';
+
+    # Build up priviledges from the base of novice.  This is of course based
+    # on the US band plan.  Other band plans should be easily added and put
+    # in their own country section
+
+    if ( $bandcountry eq 'usa' ) {
+        if ( $bandlicense eq 'novice' )     { $privs = '1'; }
+        if ( $bandlicense eq 'technician' ) { $privs = '2'; }
+        if ( $bandlicense eq 'general' )    { $privs = '3'; }
+        if ( $bandlicense eq 'advanced' )   { $privs = '4'; }
+        if ( $bandlicense eq 'extra' )      { $privs = '5'; }
+
+        if ( $privs == 0 ) {
+            print 'Unknown license ' . $bandlicense . "\n";
+        }
+
+        # Novice
+        if ( $privs > 0 ) {
+            my @newcwfreqs = (
+                '3525000-3600000',      # 80m
+                '7025000-7125000',      # 40m
+                '21025000-21200000',    # 15m
+                '28000000-28300000'     # 10m
+            );
+
+            my @newdatafreqs = ();
+
+            my @newssbfreqs = (
+                '28300000-28500000'     # 10m
+            );
+
+            push( @cwfreqs,   @newcwfreqs );
+            push( @datafreqs, @newdatafreqs );
+            push( @ssbfreqs,  @newssbfreqs );
+        }
+
+        # Technician
+        if ( $privs > 1 ) {
+            my @newcwfreqs = (
+                '50000000-50100000'     # 6m
+            );
+
+            my @newdatafreqs = ();
+
+            my @newssbfreqs = (
+                '50100000-54000000'     # 6m
+            );
+
+            push( @cwfreqs,   @newcwfreqs );
+            push( @datafreqs, @newdatafreqs );
+            push( @ssbfreqs,  @newssbfreqs );
+        }
+
+        # General
+        if ( $privs > 2 ) {
+            my @newcwfreqs = (
+                '1800000-2000000',      # 160m
+                '3525000-3600000',      # 80m
+                '5330500', '5346500', '5357000', '5371500', '5403500',   # 60m
+                '7025000-7125000',                                       # 40m
+                '10100000-10150000',                                     # 30m
+                '14025000-14150000',                                     # 20m
+                '18068000-18110000',                                     # 17m
+                '21025000-21200000',                                     # 15m
+                '24890000-24930000',                                     # 12m
+                '28000000-28300000'                                      # 10m
+            );
+
+            my @newdatafreqs = (
+                '1800000-2000000',    # 160m
+                '3525000-3600000',    # 80m
+                '5330500', '5346500', '5357000', '5371500', '5403500',   # 60m
+                '7025000-7125000',                                       # 40m
+                '10100000-10150000',                                     # 30m
+                '14025000-14150000',                                     # 20m
+                '18068000-18110000',                                     # 17m
+                '21025000-21200000',                                     # 15m
+                '24890000-24930000',                                     # 12m
+                '28000000-28300000'                                      # 10m
+            );
+
+            my @newssbfreqs = (
+                '1800000-2000000',    # 160m
+                '3800000-4000000',    # 80m
+                '5330500', '5346500', '5357000', '5371500', '5403500',   # 60m
+                '7175000-7300000',                                       # 40m
+                '10100000-10150000',                                     # 30m
+                '14225000-14350000',                                     # 20m
+                '18110000-18168000',                                     # 17m
+                '21275000-21450000',                                     # 15m
+                '24930000-24990000',                                     # 12m
+                '28500000-29700000'                                      # 10m
+            );
+
+            push( @cwfreqs,   @newcwfreqs );
+            push( @datafreqs, @newdatafreqs );
+            push( @ssbfreqs,  @newssbfreqs );
+        }
+
+        # Advanced
+        if ( $privs > 3 ) {
+            my @newcwfreqs = ();
+
+            my @newdatafreqs = ();
+
+            my @newssbfreqs = (
+                '3700000-3800000',      # 80m
+                '7125000-7175000',      # 40m
+                '14175000-14225000',    # 20m
+                '21225000-21275000'     # 15m
+            );
+
+            push( @cwfreqs,   @newcwfreqs );
+            push( @datafreqs, @newdatafreqs );
+            push( @ssbfreqs,  @newssbfreqs );
+        }
+
+        # Extra
+        if ( $privs > 4 ) {
+            my @newcwfreqs = (
+                '3500000-3525000',      # 80m
+                '7000000-7025000',      # 40m
+                '14000000-14025000',    # 20m
+                '21000000-21025000'     # 15m
+            );
+
+            my @newdatafreqs = ();
+
+            my @newssbfreqs = (
+                '3600000-3700000',      # 80m
+                '14150000-14175000',    # 20m
+                '21200000-21225000'     # 15m
+            );
+
+            push( @cwfreqs,   @newcwfreqs );
+            push( @datafreqs, @newdatafreqs );
+            push( @ssbfreqs,  @newssbfreqs );
+        }
+    }
+
+    return ( \@cwfreqs, \@datafreqs, \@ssbfreqs );
+}
 
 1;

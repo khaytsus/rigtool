@@ -49,6 +49,7 @@ my $scanstep           = $rigtool::scanstep;
 my $scandelay          = $rigtool::scandelay;
 my $scanupkey          = $rigtool::scanupkey;
 my $scandownkey        = $rigtool::scandownkey;
+my @sixtymfreqs        = @rigtool::sixtymfreqs;
 my %tuneinfo           = %rigtool::tuneinfo;
 my %freqnames          = %rigtool::freqnames;
 my %bandnames          = %rigtool::bandnames;
@@ -64,9 +65,12 @@ $rig->set_conf( '', $hamliburl );
 # if you want to modify that
 
 # Define our cw and ssb freqs and get them defined based on license
-my ( @cwfreqs, @datafreqs, @ssbfreqs );
-
-get_bandplan( $country, $license );
+# The data is pulled from the get_bandplan sub in our module
+my ( $cwfreqsref, $datafreqsref, $ssbfreqsref )
+    = &rigtool::get_bandplan( $country, $license );
+my @cwfreqs   = @$cwfreqsref;
+my @datafreqs = @$datafreqsref;
+my @ssbfreqs  = @$ssbfreqsref;
 
 # Auto mode flag to use in various places
 my $automode = '0';
@@ -872,12 +876,7 @@ sub auto_mode_set {
         }
 
         # Handle 60m; it's always USB for SSB
-        if (   $f == 5330500
-            || $f == 5346500
-            || $f == 5357000
-            || $f == 5371500
-            || $f == 5403500 )
-        {
+        if ( grep(/$f/xms, @sixtymfreqs) ) {
             if ( $textmode ne 'USB' ) {
                 parse_mode('u');
             }
@@ -1086,7 +1085,7 @@ sub clean_freq {
     return $freq;
 }
 
-# Change a setting
+# Change a setting (TODO; not used yet)
 sub change_setting {
     my ( $var, $setting ) = @_;
     print "[$var] [$setting]\n";
@@ -1102,158 +1101,6 @@ sub change_setting {
     $$var = $setting;
     print "scandelay: $scandelay\n";
     return 0;
-}
-
-# Define our band plans
-# Data isn't really used right now, but define it.  Multiple flags can be active
-# as there is usage overlap such a data/cw, ssb/cw etc
-sub get_bandplan {
-    my ( $bandcountry, $bandlicense ) = @_;
-    $bandcountry = lc($bandcountry);
-    $bandlicense = lc($bandlicense);
-
-    my $privs = '0';
-
-    # Build up priviledges from the base of novice.  This is of course based
-    # on the US band plan.  Other band plans should be easily added and put
-    # in their own country section
-
-    if ( $bandcountry eq 'usa' ) {
-        if ( $bandlicense eq 'novice' )     { $privs = '1'; }
-        if ( $bandlicense eq 'technician' ) { $privs = '2'; }
-        if ( $bandlicense eq 'general' )    { $privs = '3'; }
-        if ( $bandlicense eq 'advanced' )   { $privs = '4'; }
-        if ( $bandlicense eq 'extra' )      { $privs = '5'; }
-
-        if ( $privs == 0 ) {
-            print 'Unknown license ' . $bandlicense . "\n";
-        }
-
-        # Novice
-        if ( $privs > 0 ) {
-            my @newcwfreqs = (
-                '3525000-3600000',      # 80m
-                '7025000-7125000',      # 40m
-                '21025000-21200000',    # 15m
-                '28000000-28300000'     # 10m
-            );
-
-            my @newdatafreqs = ();
-
-            my @newssbfreqs = (
-                '28300000-28500000'     # 10m
-            );
-
-            push( @cwfreqs,   @newcwfreqs );
-            push( @datafreqs, @newdatafreqs );
-            push( @ssbfreqs,  @newssbfreqs );
-        }
-
-        # Technician
-        if ( $privs > 1 ) {
-            my @newcwfreqs = (
-                '50000000-50100000'     # 6m
-            );
-
-            my @newdatafreqs = ();
-
-            my @newssbfreqs = (
-                '50100000-54000000'     # 6m
-            );
-
-            push( @cwfreqs,   @newcwfreqs );
-            push( @datafreqs, @newdatafreqs );
-            push( @ssbfreqs,  @newssbfreqs );
-        }
-
-        # General
-        if ( $privs > 2 ) {
-            my @newcwfreqs = (
-                '1800000-2000000',      # 160m
-                '3525000-3600000',      # 80m
-                '5330500', '5346500', '5357000', '5371500', '5403500',   # 60m
-                '7025000-7125000',                                       # 40m
-                '10100000-10150000',                                     # 30m
-                '14025000-14150000',                                     # 20m
-                '18068000-18110000',                                     # 17m
-                '21025000-21200000',                                     # 15m
-                '24890000-24930000',                                     # 12m
-                '28000000-28300000'                                      # 10m
-            );
-
-            my @newdatafreqs = (
-                '1800000-2000000',    # 160m
-                '3525000-3600000',    # 80m
-                '5330500', '5346500', '5357000', '5371500', '5403500',   # 60m
-                '7025000-7125000',                                       # 40m
-                '10100000-10150000',                                     # 30m
-                '14025000-14150000',                                     # 20m
-                '18068000-18110000',                                     # 17m
-                '21025000-21200000',                                     # 15m
-                '24890000-24930000',                                     # 12m
-                '28000000-28300000'                                      # 10m
-            );
-
-            my @newssbfreqs = (
-                '1800000-2000000',    # 160m
-                '3800000-4000000',    # 80m
-                '5330500', '5346500', '5357000', '5371500', '5403500',   # 60m
-                '7175000-7300000',                                       # 40m
-                '10100000-10150000',                                     # 30m
-                '14225000-14350000',                                     # 20m
-                '18110000-18168000',                                     # 17m
-                '21275000-21450000',                                     # 15m
-                '24930000-24990000',                                     # 12m
-                '28500000-29700000'                                      # 10m
-            );
-
-            push( @cwfreqs,   @newcwfreqs );
-            push( @datafreqs, @newdatafreqs );
-            push( @ssbfreqs,  @newssbfreqs );
-        }
-
-        # Advanced
-        if ( $privs > 3 ) {
-            my @newcwfreqs = ();
-
-            my @newdatafreqs = ();
-
-            my @newssbfreqs = (
-                '3700000-3800000',      # 80m
-                '7125000-7175000',      # 40m
-                '14175000-14225000',    # 20m
-                '21225000-21275000'     # 15m
-            );
-
-            push( @cwfreqs,   @newcwfreqs );
-            push( @datafreqs, @newdatafreqs );
-            push( @ssbfreqs,  @newssbfreqs );
-        }
-
-        # Extra
-        if ( $privs > 4 ) {
-            my @newcwfreqs = (
-                '3500000-3525000',      # 80m
-                '7000000-7025000',      # 40m
-                '14000000-14025000',    # 20m
-                '21000000-21025000'     # 15m
-            );
-
-            my @newdatafreqs = ();
-
-            my @newssbfreqs = (
-                '3600000-3700000',      # 80m
-                '14150000-14175000',    # 20m
-                '21200000-21225000'     # 15m
-            );
-
-            push( @cwfreqs,   @newcwfreqs );
-            push( @datafreqs, @newdatafreqs );
-            push( @ssbfreqs,  @newssbfreqs );
-        }
-    }
-
-    return;
 }
 
 # Give back a name if this frequency is known
