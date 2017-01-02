@@ -50,6 +50,10 @@ our $showtuneinfo = '1';
 # Determine if we show band info or not (ie: what band we're on)
 our $showbandinfo = '1';
 
+# Lock the mode (set it back if it's changed on the radio)
+# Really only works in auto mode (?)
+our $locked = '0';
+
 # How many times can we fail opening the port before we give up?
 our $rigopenmax = '25';
 

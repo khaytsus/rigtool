@@ -32,6 +32,7 @@ my $avgsignal          = $rigtool::avgsignal;
 my $avgsamples         = $rigtool::avgsamples;
 my $showtuneinfo       = $rigtool::showtuneinfo;
 my $showbandinfo       = $rigtool::showbandinfo;
+my $locked             = $rigtool::locked;
 my $rigopenmax         = $rigtool::rigopenmax;
 my $hzstep             = $rigtool::hzstep;
 my $khzstep            = $rigtool::khzstep;
@@ -111,10 +112,6 @@ my ( $r, $c_r, $c_g, $c_c, $c_m, $c_b, $c_y, $cl,
 # Set up our color tags
 color_tags();
 
-# Lock the mode (set it back if it's changed on the radio)
-# Really only works in auto mode (?)
-my $locked = '0';
-
 # Keep track of how many times we had to open the connection for info
 my $rigopens = '0';
 
@@ -151,6 +148,8 @@ manual_mode();
 print "Exiting script\n";
 
 rigclose();
+
+exit;
 
 sub manual_mode {
 
@@ -1279,7 +1278,7 @@ END
     return;
 }
 
-# Set up our color tags if we're set to use it
+# Set up our color tags
 sub color_tags {
 
     # If we're colorizing, set our bold default
