@@ -21,6 +21,7 @@ my $cw_passband        = $rigtool::cw_passband;
 my $data_passband      = $rigtool::data_passband;
 my $ssb_passband       = $rigtool::ssb_passband;
 my $am_passband        = $rigtool::am_passband;
+my $fm_passband        = $rigtool::fm_passband;
 my $tune_bottom        = $rigtool::tune_bottom;
 my $tune_top           = $rigtool::tune_top;
 my $enforce_tune_limit = $rigtool::enforce_tune_limit;
@@ -420,7 +421,9 @@ sub parse_input {
         }
 
         # Parse and change frequency
-        if ( $input =~ /f/xms || $input =~ /^[0-9\.,]+$/xms ) {
+        if ( ( $input =~ /f/xms && $input !~ /fm/xms )
+            || $input =~ /^[0-9\.,]+$/xms )
+        {
             parse_f($input);
             $storelastinput++;
         }
@@ -430,6 +433,7 @@ sub parse_input {
             || $input =~ /l/xms
             || $input =~ /c/xms
             || $input =~ /am/xms
+            || $input =~ /fm/xms
             || $input =~ /d/xms )
         {
             parse_mode($input);
@@ -959,6 +963,11 @@ sub parse_mode {
         if ( $textmode eq $output ) { return; }
         $rig->set_mode( $Hamlib::RIG_MODE_AM, $am_passband );
     }
+    if ( $input =~ /fm/xms ) {
+        $output = 'FM';
+        if ( $textmode eq $output ) { return; }
+        $rig->set_mode( $Hamlib::RIG_MODE_FM, $fm_passband );
+    }
 
     unless ( $automode || $scanmode || $locked ) {
         print "Switching to $output mode\n";
@@ -1229,6 +1238,7 @@ auto - Switch to autotune mode
    l - Switch to Lower Side Band
    c - Switch to CW
   am - Switch to AM
+  fm - Switch to FM
    d - Switch to USB Data Mode
   dl - Switch to LSB Data mode
    a - Switch to VFO A

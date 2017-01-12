@@ -12,6 +12,7 @@ our $cw_passband   = '1000';
 our $data_passband = '3000';
 our $ssb_passband  = '3000';
 our $am_passband   = '6000';
+our $fm_passband   = '12000';
 
 # Radio tuning limits
 our $tune_bottom        = '30000';

@@ -58,6 +58,8 @@ The default mode when launched is manual mode, which allows you to control the r
   * Switch to CW
  * am
   * Switch to AM
+ * fm
+  * Switch to FM
  * d/du/dl
   * Switch to DATA mode, d/du are USB, dl is LSB
  * a/b
