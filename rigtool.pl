@@ -198,10 +198,14 @@ sub freq_text {
     }
 
     # Sometimes we seem to get nonsense, try to cycle the connection
-    if ( $f < $testfreq ) {
+    if ( $f =~ /NaN/ || $f < $testfreq ) {
         rigclose();
         rigopen();
         return ( 0, 0, 0, 0, 0, '', '' );
+    }
+    else {
+        # Reset our rigopens counter if we got a good value
+        $rigopens = 0;
     }
 
     foreach my $item (@cwfreqs) {
@@ -478,11 +482,13 @@ sub parse_input {
                 my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
                     $outofband,   $tunertext, $bandtext
                 ) = freq_text();
-                print 'Switched to ' . $pretty_freq . ' kHz';
-                if ( defined($freqname) && $freqname ne '' ) {
-                    print ' (' . $c_c . $freqname . $r . ')';
+                if ( $pretty_freq !~ /NaN/ && $pretty_freq != 0 ) {
+                    print 'Switched to ' . $pretty_freq . ' kHz';
+                    if ( defined($freqname) && $freqname ne '' ) {
+                        print ' (' . $c_c . $freqname . $r . ')';
+                    }
+                    print "\n";
                 }
-                print "\n";
                 $lastfreq = $f;
             }
             return;
@@ -786,7 +792,7 @@ sub create_prompt {
     $lastvfo = $textvfo;
 
 # Sometimes we seem to get nonsense, set pretty_freq to 0 to avoid ugly errors
-    if ( $pretty_freq eq '' ) {
+    if ( $pretty_freq eq '' || $pretty_freq =~ /NaN/ ) {
         $pretty_freq = 0;
     }
 
