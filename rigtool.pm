@@ -7,6 +7,11 @@ our $hamliburl = "localhost:4532";
 our $country = 'USA';
 our $license = 'Advanced';
 
+# Note file to use
+# Location of file which will pause scanning
+my $home = $ENV{"HOME"};
+our $notefile = $home . '/rigtoolnotes.txt';
+
 # Pass band widths
 our $cw_passband   = '1000';
 our $data_passband = '3000';

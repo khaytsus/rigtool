@@ -57,6 +57,7 @@ my @sixtymfreqs        = @rigtool::sixtymfreqs;
 my %tuneinfo           = %rigtool::tuneinfo;
 my %freqnames          = %rigtool::freqnames;
 my %bandnames          = %rigtool::bandnames;
+my $notefile           = $rigtool::notefile;
 
 # Comment out to enable hamlib debugging (very noisy)
 Hamlib::rig_set_debug($Hamlib::RIG_DEBUG_NONE);
@@ -163,7 +164,7 @@ sub manual_mode {
         print $prompt . ': ';
         my $input = <STDIN>;
         chomp $input;
-        $input = lc($input);
+        $input = ($input);
         parse_input($input);
 
         # Return to our locked freq/mode if locked
@@ -312,7 +313,9 @@ sub freq_text {
 }
 
 sub parse_input {
-    my ($input) = @_;
+    my ($orig_input) = @_;
+    # Lowercase our input for most tests
+    my $input = lc($orig_input);
 
     my $storelastinput = '0';
     my $skip           = '0';
@@ -369,6 +372,13 @@ sub parse_input {
         my ( $foo, $data )    = split( /\ /xms, $input );
         my ( $var, $setting ) = split( /=/xms,  $data );
         change_setting( $var, $setting );
+        return;
+    }
+
+    if ( $input =~ /note/xms ) {
+        my ( $foo, @note ) = split( /\ /xms, $orig_input );
+        my $notestring = join( ' ', @note );
+        save_note($notestring);
         return;
     }
 
@@ -1231,6 +1241,43 @@ sub freq_from_name {
     return;
 }
 
+# Save a note about this frequency
+sub save_note {
+    my ($note) = @_;
+    if ( defined($notefile) && length($note) > 0 ) {
+        open 'NOTEFILE', '>>', $notefile or do {
+            print 'Can\'t write to ' . $notefile . "\n";
+            return;
+        };
+        my $timestamp   = logtimestamp();
+        my $f           = $rig->get_freq();
+        my $pretty_freq = $f / $freqdiv;
+        my ( $mode, $width ) = $rig->get_mode();
+        my $textmode = Hamlib::rig_strrmode($mode);
+        print NOTEFILE $timestamp . ' - '
+            . $pretty_freq . ' ['
+            . $textmode . '] '
+            . $note . "\n";
+        close('NOTEFILE');
+
+        return;
+    }
+}
+
+# Get a pretty timestamp for our logfile
+sub logtimestamp {
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst )
+        = localtime(time);
+    my $nice_timestamp = sprintf(
+        '%04d' . '-' . '%02d' . '-' . '%02d' . ' ' . '%02d' . ':' . '%02d'
+            . ':' . '%02d',
+        $year + 1900,
+        $mon + 1, $mday, $hour, $min, $sec
+    );
+
+    return $nice_timestamp;
+}
+
 sub usage {
     my ($exted) = @_;
 
@@ -1257,6 +1304,7 @@ auto - Switch to autotune mode
 lock - Lock to current freq/mode
 unlock - Unlock
 chan name - Switch to frequency of named channel
+note - Capture a note about the current frequency
 f7188lb - Move to 7188kHz LSB on VFO B
 28450 - Move to 28450kHz (assumes input in kilohertz)
 28203.5 or 28.2035 - Move to 28203.5kHz (only way to input sub-khz frequencies)
