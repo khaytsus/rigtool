@@ -150,6 +150,10 @@ You're on 28450kHz and you see a DX spot on 28400, you can type f28400 (or just 
 
 The ! command in Manual mode will repeat the last command, most useful for if you're scanning and you want to stop to check out a possible signal, then after that keep scanning.  Only scanning and frequency changing commands are remembered for repeating.
 
+### Note file
+
+If you want to capture a comment or note about the current frequency you can do that in manual mode with **note Note to self** and it will store it, by default, in $HOME/rigtoolnotes.txt and if you prefer you can change the path or filename in the module.
+
 ### Band privileges
 
 The script uses the band privileges configuration to determine when to switch to CW or phone modes, as well as when to show warnings when out of band privileges.

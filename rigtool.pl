@@ -11,6 +11,9 @@ use lib $FindBin::Bin;
 
 our $VERSION = '1.1';
 
+# Todo
+# Power changing
+
 # Use our rigtool.pm module and get all of our settings out of it
 use rigtool;
 
@@ -157,9 +160,11 @@ sub manual_mode {
 
     # Loop through our prompt while we're running
     while ($whileloop) {
-        my ( $prompt, $tunertext, $extratext, $bandtext ) = create_prompt();
+        my ( $prompt, $tunertext, $extratext, $bandtext, $chantext )
+            = create_prompt();
+
         if ( $tunertext ne '' ) {
-            print $tunertext . ' ' . $bandtext . "\n";
+            print $tunertext . ' ' . $bandtext . $chantext . "\n";
         }
         print $prompt . ': ';
         my $input = <STDIN>;
@@ -187,6 +192,7 @@ sub freq_text {
     my $matched   = '';
     my $tunertext = '';
     my $bandtext  = '';
+    my $chantext  = '';
     my $testfreq  = '1000';
     my $f         = $testfreq;
 
@@ -306,14 +312,30 @@ sub freq_text {
     my $outofband = '0';
     unless ( $matched || !defined($license) ) { $outofband = '1'; }
 
-    return (
-        $pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
-        $outofband,   $tunertext, $bandtext
+    # If we know this frequency, add it to the prompt
+    my $freqname = name_from_freq($f);
+    if ( defined($freqname) && $freqname ne '' ) {
+        $chantext .= ' (' . $c_c . $freqname . $r . ') ';
+    }
+
+    # Create a hash to return so it makes it easier to extend and only use what we need
+    my %returnhash = (
+        'pretty_freq' => $pretty_freq,
+        'cwmatch'     => $cwmatch,
+        'datamatch'   => $datamatch,
+        'ssbmatch'    => $ssbmatch,
+        'outofband'   => $outofband,
+        'tunertext'   => $tunertext,
+        'bandtext'    => $bandtext,
+        'chantext'    => $chantext
     );
+
+    return %returnhash;
 }
 
 sub parse_input {
     my ($orig_input) = @_;
+
     # Lowercase our input for most tests
     my $input = lc($orig_input);
 
@@ -489,11 +511,13 @@ sub parse_input {
         if ( $input =~ /^$/xms ) {
             if ( $f != $lastfreq ) {
                 my $freqname = name_from_freq($f);
-                my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
-                    $outofband,   $tunertext, $bandtext
-                ) = freq_text();
-                if ( $pretty_freq !~ /NaN/ && $pretty_freq != 0 ) {
-                    print 'Switched to ' . $pretty_freq . ' kHz';
+
+                my %freqtext = freq_text();
+
+                if (   $freqtext{pretty_freq} !~ /NaN/
+                    && $freqtext{pretty_freq} != 0 )
+                {
+                    print 'Switched to ' . $freqtext{pretty_freq} . ' kHz';
                     if ( defined($freqname) && $freqname ne '' ) {
                         print ' (' . $c_c . $freqname . $r . ')';
                     }
@@ -551,10 +575,8 @@ sub auto_mode {
         my ( $prompt, $tunertext, $extratext, $bandtext )
             = create_prompt($extra);
 
-   # TODO:  Fix tunertextextra so I'm not getting the same text back from both
-        my ( $pretty_freq, $cwmatch, $datamatch,
-            $ssbmatch, $outofband, $tunertextextra, $bandtextextra )
-            = freq_text();
+        my %freqtext = freq_text();
+
         my $textmode = Hamlib::rig_strrmode($mode);
 
        # If the mode matches the bypassdatamode expression, don't switch modes
@@ -562,7 +584,8 @@ sub auto_mode {
             && $bypassdatamode ne ""
             && $textmode =~ /$bypassdatamode/xms )
         {
-            auto_mode_set( $f, $textmode, $cwmatch, $datamatch, $ssbmatch );
+            auto_mode_set( $f, $textmode, $freqtext{cwmatch},
+                $freqtext{datamatch}, $freqtext{ssbmatch} );
         }
 
         print $topleft . $cl . $tunertext . "\n";
@@ -724,17 +747,15 @@ sub scan {
         # If we were in Auto mode, do a band scan.  If we started out of band,
         # just keep going.
         if ($automode) {
-            my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
-                $outofband,   $tunertext, $bandtext
-            ) = freq_text();
+            my %freqtext = freq_text();
             if ( $scanstart == 1 ) {
                 $scanstart = '0';
-                if ($outofband) {
+                if ( $freqtext{outofband} ) {
                     $startoutofband = '1';
                 }
             }
 
-            if ( $outofband && $startoutofband == 0 ) {
+            if ( $freqtext{outofband} && $startoutofband == 0 ) {
                 if    ( $direction eq 'up' )   { $direction = 'down'; }
                 elsif ( $direction eq 'down' ) { $direction = 'up'; }
             }
@@ -790,9 +811,10 @@ sub create_prompt {
     }
 
     my $freqcolor = $c_c;
-    my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
-        $outofband,   $tunertext, $bandtext
-    ) = freq_text();
+
+    my %freqtext    = freq_text();
+    my $pretty_freq = $freqtext{pretty_freq};
+
     my ( $mode, $width ) = $rig->get_mode();
     my $textmode = Hamlib::rig_strrmode($mode);
     my $vfo      = $rig->get_vfo();
@@ -815,11 +837,11 @@ sub create_prompt {
         $extra = '(Scanning) ' . $extra;
     }
 
-    if ( $bandtext ne '' ) {
-        $extra = $extra . ' ' . $bandtext;
+    if ( $freqtext{bandtext} ne '' ) {
+        $extra = $extra . ' ' . $freqtext{bandtext};
     }
 
-    if ($outofband) {
+    if ( $freqtext{outofband} ) {
         $freqcolor = $c_r;
         $extra = $r . $c_r . $cl . 'Warning -- Out of Band ' . $r . $extra;
     }
@@ -860,7 +882,8 @@ sub create_prompt {
             . $lockstatus
             . $r . ')';
     }
-    return $prompt, $tunertext, $extra, $bandtext;
+    return $prompt, $freqtext{tunertext}, $extra, $freqtext{bandtext},
+        $freqtext{chantext};
 }
 
 # Set the mode based on the frequency we're on when in auto mode
@@ -1010,15 +1033,14 @@ sub parse_f {
         # on the radio since we're not setting it until later.
         # TODO: Make sure this is sane.
         if ($fautomodeset) {
-            my ($pretty_freq, $cwmatch,   $datamatch, $ssbmatch,
-                $outofband,   $tunertext, $bandtext
-            ) = freq_text($cleanfreq);
+            my %freqtext = freq_text($cleanfreq);
 
             my ( $mode, $width ) = $rig->get_mode();
             my $textmode = Hamlib::rig_strrmode($mode);
 
             # Pass our new freq and invalid mode so we switch properly
-            auto_mode_set( $cleanfreq, 'X', $cwmatch, $datamatch, $ssbmatch );
+            auto_mode_set( $cleanfreq, 'X', $freqtext{cwmatch},
+                $freqtext{datamatch}, $freqtext{ssbmatch} );
         }
 
         my $prettyfreq = $cleanfreq / $freqdiv;
@@ -1125,8 +1147,8 @@ sub name_from_freq {
     # If set, add frequency name to status text
     for my $key ( keys %freqnames ) {
         my $value = $freqnames{$key};
-
-        if ( $freq eq $key ) {
+        my ( $keyvalue, undef ) = split( '\|', $key );
+        if ( $freq eq $keyvalue ) {
             return $value;
         }
     }
