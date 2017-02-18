@@ -11,9 +11,6 @@ use lib $FindBin::Bin;
 
 our $VERSION = '1.1';
 
-# Todo
-# Power changing
-
 # Use our rigtool.pm module and get all of our settings out of it
 use rigtool;
 
@@ -61,6 +58,7 @@ my %tuneinfo           = %rigtool::tuneinfo;
 my %freqnames          = %rigtool::freqnames;
 my %bandnames          = %rigtool::bandnames;
 my $notefile           = $rigtool::notefile;
+my $powerdivider       = $rigtool::powerdivider;
 
 # Comment out to enable hamlib debugging (very noisy)
 Hamlib::rig_set_debug($Hamlib::RIG_DEBUG_NONE);
@@ -318,7 +316,7 @@ sub freq_text {
         $chantext .= ' (' . $c_c . $freqname . $r . ') ';
     }
 
-    # Create a hash to return so it makes it easier to extend and only use what we need
+# Create a hash to return so it makes it easier to extend and only use what we need
     my %returnhash = (
         'pretty_freq' => $pretty_freq,
         'cwmatch'     => $cwmatch,
@@ -391,14 +389,33 @@ sub parse_input {
     }
 
     if ( $input =~ /set/xms ) {
-        my ( $foo, $data )    = split( /\ /xms, $input );
-        my ( $var, $setting ) = split( /=/xms,  $data );
+        my ( undef, $data )    = split( /\ /xms, $input );
+        my ( $var,  $setting ) = split( /=/xms,  $data );
         change_setting( $var, $setting );
         return;
     }
 
+    # Change radio power
+    if ( $input =~ /^power/xms ) {
+        my ( undef, $data ) = split( /\ /xms, $input );
+        if ( $data =~ /^\d+$/xms && $data > 0 ) {
+            print 'Setting power to ' . $data . " watts\n";
+            my $adjustedpower = $data / $powerdivider;
+
+            # Not sure how to do this with the perl module yet :(
+            my @args
+                = ("echo L RFPOWER $adjustedpower | rigctl -m 2 >/dev/null");
+            system(@args) == 0
+                or print 'Power change failed for ' . $data . "\n";
+        }
+        else {
+            print 'Invalid input: ' . $data . "\n";
+        }
+        return;
+    }
+
     if ( $input =~ /note/xms ) {
-        my ( $foo, @note ) = split( /\ /xms, $orig_input );
+        my ( undef, @note ) = split( /\ /xms, $orig_input );
         my $notestring = join( ' ', @note );
         save_note($notestring);
         return;

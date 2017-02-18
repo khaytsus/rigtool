@@ -68,6 +68,8 @@ The default mode when launched is manual mode, which allows you to control the r
   * Revert to last freq/mode
  * q
   * Exit
+ * power
+  * Set the power on the radio if possible
  * lock
   * Lock to current frequency and mode
   * This is software lock; does not set Lock setting on radio, just keeps the radio at current settings
@@ -149,6 +151,10 @@ You're on 28450kHz and you see a DX spot on 28400, you can type f28400 (or just 
 ### Repeat Last Command
 
 The ! command in Manual mode will repeat the last command, most useful for if you're scanning and you want to stop to check out a possible signal, then after that keep scanning.  Only scanning and frequency changing commands are remembered for repeating.
+
+### Power setting
+
+If your rig can accept power changing over hamlib you can set the $powerdivider setting in the module to the appropriate value so you can type "power 15" for example to set your output power to 15w.  You'll need to experiment to see what value your radio is if the default 250 isn't setting your radio to the right output power.
 
 ### Note file
 
