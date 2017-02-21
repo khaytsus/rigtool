@@ -398,18 +398,15 @@ sub parse_input {
     # Change radio power
     if ( $input =~ /^power/xms ) {
         my ( undef, $data ) = split( /\ /xms, $input );
-        if ( $data =~ /^\d+$/xms && $data > 0 ) {
-            print 'Setting power to ' . $data . " watts\n";
+        if ( $data =~ /^\d+$/xms && $data > 0 && $data <= 1500) {
+            my $outputpower = int(($rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER) * $powerdivider) + .5);
+            print 'Setting power from ' . $outputpower . ' to ' . $data . " watts\n";
+            
             my $adjustedpower = $data / $powerdivider;
-
-            # Not sure how to do this with the perl module yet :(
-            my @args
-                = ("echo L RFPOWER $adjustedpower | rigctl -m 2 >/dev/null");
-            system(@args) == 0
-                or print 'Power change failed for ' . $data . "\n";
+            $rig->set_level($Hamlib::RIG_LEVEL_RFPOWER, $adjustedpower);
         }
         else {
-            print 'Invalid input: ' . $data . "\n";
+            print 'Invalid power value, must be between 0 and 1500' . "\n";
         }
         return;
     }
@@ -863,6 +860,9 @@ sub create_prompt {
         $extra = $r . $c_r . $cl . 'Warning -- Out of Band ' . $r . $extra;
     }
 
+    # Retrieve the output power of the rig and round up
+    my $outputpower = int(($rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER) * $powerdivider) + .5);
+
     my $signal = $rig->get_level_i($Hamlib::RIG_LEVEL_STRENGTH);
 
     if ( $avgsignal && $automode ) {
@@ -892,6 +892,9 @@ sub create_prompt {
             . $r . '/'
             . $c_g
             . $textmode
+            . $r . '/'
+            . $c_y
+            . $outputpower . 'w'
             . $r . '/'
             . $c_m
             . $textvfo

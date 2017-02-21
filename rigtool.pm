@@ -24,8 +24,8 @@ our $tune_bottom        = '30000';
 our $tune_top           = '56000000';
 our $enforce_tune_limit = '0';
 
-# Power divider.  Example, if I want 15W, I want it to set the power to .06, which is 15/250
-our $powerdivider = '250';
+# Power divider.  Example, if I want 15W, I want it to set the power to .06, which is 15/255
+our $powerdivider = '255';
 
 # If your radio offsets when it switches between CW and SSB, you can set that here
 # or set it to 0 if you don't want the script twiddling this on CW/SSB transitions
