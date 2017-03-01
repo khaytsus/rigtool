@@ -206,7 +206,17 @@ sub freq_text {
     if ( $f =~ /NaN/ || $f < $testfreq ) {
         rigclose();
         rigopen();
-        return ( 0, 0, 0, 0, 0, '', '' );
+        my %returnhash = (
+            'pretty_freq' => 0,
+            'cwmatch'     => 0,
+            'datamatch'   => 0,
+            'ssbmatch'    => 0,
+            'outofband'   => 0,
+            'tunertext'   => '',
+            'bandtext'    => '',
+            'chantext'    => ''
+        );
+        return %returnhash;
     }
     else {
         # Reset our rigopens counter if we got a good value
@@ -398,12 +408,19 @@ sub parse_input {
     # Change radio power
     if ( $input =~ /^power/xms ) {
         my ( undef, $data ) = split( /\ /xms, $input );
-        if ( $data =~ /^\d+$/xms && $data > 0 && $data <= 1500) {
-            my $outputpower = int(($rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER) * $powerdivider) + .5);
-            print 'Setting power from ' . $outputpower . ' to ' . $data . " watts\n";
-            
+        if ( $data =~ /^\d+$/xms && $data > 0 && $data <= 1500 ) {
+            my $outputpower = int(
+                (         $rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER)
+                        * $powerdivider
+                ) + .5
+            );
+            print 'Setting power from '
+                . $outputpower . ' to '
+                . $data
+                . " watts\n";
+
             my $adjustedpower = $data / $powerdivider;
-            $rig->set_level($Hamlib::RIG_LEVEL_RFPOWER, $adjustedpower);
+            $rig->set_level( $Hamlib::RIG_LEVEL_RFPOWER, $adjustedpower );
         }
         else {
             print 'Invalid power value, must be between 0 and 1500' . "\n";
@@ -861,7 +878,10 @@ sub create_prompt {
     }
 
     # Retrieve the output power of the rig and round up
-    my $outputpower = int(($rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER) * $powerdivider) + .5);
+    my $outputpower
+        = int(
+        ( $rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER) * $powerdivider )
+        + .5 );
 
     my $signal = $rig->get_level_i($Hamlib::RIG_LEVEL_STRENGTH);
 
