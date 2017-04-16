@@ -408,6 +408,7 @@ sub parse_input {
     # Change radio power
     if ( $input =~ /^power/xms ) {
         my ( undef, $data ) = split( /\ /xms, $input );
+        $data =~ s/[wW]//g;
         if ( $data =~ /^\d+$/xms && $data > 0 && $data <= 1500 ) {
             my $outputpower = int(
                 (         $rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER)
