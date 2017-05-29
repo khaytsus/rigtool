@@ -408,23 +408,29 @@ sub parse_input {
     # Change radio power
     if ( $input =~ /^power/xms ) {
         my ( undef, $data ) = split( /\ /xms, $input );
-        $data =~ s/[wW]//g;
-        if ( $data =~ /^\d+$/xms && $data > 0 && $data <= 1500 ) {
-            my $outputpower = int(
-                (         $rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER)
-                        * $powerdivider
-                ) + .5
-            );
-            print 'Setting power from '
-                . $outputpower . ' to '
-                . $data
-                . " watts\n";
+        if ( defined($data) ) {
+            $data =~ s/[wW]//g;
+            if ( $data =~ /^\d+$/xms && $data > 0 && $data <= 1500 ) {
+                my $outputpower = int(
+                    (         $rig->get_level_f($Hamlib::RIG_LEVEL_RFPOWER)
+                            * $powerdivider
+                    ) + .5
+                );
+                print 'Setting power from '
+                    . $outputpower . ' to '
+                    . $data
+                    . " watts\n";
 
-            my $adjustedpower = $data / $powerdivider;
-            $rig->set_level( $Hamlib::RIG_LEVEL_RFPOWER, $adjustedpower );
+                my $adjustedpower = $data / $powerdivider;
+                $rig->set_level( $Hamlib::RIG_LEVEL_RFPOWER, $adjustedpower );
+            }
+            else {
+                print 'Invalid power value, must be between 0 and 1500'
+                    . "\n";
+            }
         }
         else {
-            print 'Invalid power value, must be between 0 and 1500' . "\n";
+            print 'No power value, must be between 0 and 1500' . "\n";
         }
         return;
     }
