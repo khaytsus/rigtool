@@ -11,6 +11,10 @@ use lib $FindBin::Bin;
 
 our $VERSION = '1.1';
 
+# Todo - Remote tuning
+# Interesting thing
+# RIG_FLAG_TUNER RIG_FUNC_LOCK RIG_FUNC_TUNER send_morse
+
 # Use our rigtool.pm module and get all of our settings out of it
 use rigtool;
 

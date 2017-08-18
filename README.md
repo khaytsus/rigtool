@@ -190,6 +190,7 @@ You may specify **_auto_** as the first command line argument to go directly int
 
 ### Todo
 
+ * Tune command via hamlib (to remotely tune auto-tuner)
  * Scan mode signal detection
  * Disable tx out of privs/band, etc (if possible in hamlib)
  * Real radio lock mode, not software emulated mode (if possible in hamlib)
