@@ -315,7 +315,16 @@ sub freq_text {
     my ( $khz, $hz );
     if ( $pretty_freq =~ /\./xms ) {
         ( $khz, $hz ) = split( /\./xms, $pretty_freq );
-        $hz .= '0' x ( 2 - length $hz );
+        my $padlength = 2 - length $hz;
+        if ( $padlength > 0 )
+        {
+            $hz .= '0' x $padlength;
+        }
+        # Otherwise, just pad two zeros
+        else
+        {
+            $hz .= '00';
+        }
         $pretty_freq = $khz . '.' . $hz;
     }
     else {

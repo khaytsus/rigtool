@@ -87,10 +87,10 @@ our $scanupkey   = '2';
 our $scandownkey = '3';
 
 # Step size for scan mode
-our $scanstep = '2.0';
+our $scanstep = '.2';
 
 # Scan delay, in seconds
-our $scandelay = '.1';
+our $scandelay = '.01';
 
 # If you want to have color output, set this to 1
 our $coloroutput = '1';
