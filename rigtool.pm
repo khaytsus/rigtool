@@ -87,7 +87,7 @@ our $scanupkey   = '2';
 our $scandownkey = '3';
 
 # Step size for scan mode
-our $scanstep = '.2';
+our $scanstep = '.5';
 
 # Scan delay, in seconds
 our $scandelay = '.01';

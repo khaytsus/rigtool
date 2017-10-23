@@ -70,6 +70,8 @@ The default mode when launched is manual mode, which allows you to control the r
   * Exit
  * power
   * Set the power on the radio if possible
+ * note
+  * Write a note about the current frequency into a note file for reference later
  * lock
   * Lock to current frequency and mode
   * This is software lock; does not set Lock setting on radio, just keeps the radio at current settings
@@ -158,7 +160,7 @@ If your rig can accept power changing over hamlib you can set the $powerdivider 
 
 ### Note file
 
-If you want to capture a comment or note about the current frequency you can do that in manual mode with **note Note to self** and it will store it, by default, in $HOME/rigtoolnotes.txt and if you prefer you can change the path or filename in the module.
+If you want to capture a comment or note about the current frequency you can do that in manual mode with **note This is a note about this frequency** and it will store it, by default, in $HOME/rigtoolnotes.txt and if you prefer you can change the path or filename in the module.
 
 ### Band privileges
 
