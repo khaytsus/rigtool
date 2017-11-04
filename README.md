@@ -30,7 +30,7 @@ The prompt is based on the mode (manual or automatic) and has some dynamic text 
 
 (C 2.8 -2.8)  
 (Auto mode) (20M)  
-14076.00/-29/USB/35w/A/U  
+(14076.00/-29/USB/35w/A/U)  
 
 This indicates the radio is on 14.076mhz, signal strength is -29, USB, set to 35 watts, VFO A, and Unlocked.  My tuner setting for this band is Inductor C, Antenna 2.8, Antenna -2.8 (yes, tuning 20m is goofy for me for right now).  This information is updated about once a second, so if changing frequency all of this updates in basically real time, including if you go out of band it displays a warning, or if different tuner settings are set for a different part of the band, etc.
 
@@ -230,15 +230,11 @@ You may specify **_auto_** as the first command line argument to go directly int
 ### Dependencies
 
   * Radio which supports CAT control and is supported by hamlib
-
   * rigctld
     * rigctld must be running and configured to talk to your radio.  If the host or port is different than default you must set this at the top of the script
-
   * hamlib
     * Specific version requirements unknown; I am using 3.0.1
-
   * Perl modules
     * Term::ReadKey
-
   * Optional Perl modules
     * Term::ANSIColor
