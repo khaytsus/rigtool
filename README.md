@@ -5,7 +5,7 @@ Control an amateur radio that is compatible with hamlib.
 
 This script allows me to automate a good deal of things on my radio, particularly the ability to quickly go to a frequency that I'm interested in, such as DX Spot or a calling frequency I use, or to scan the bands.  Often I just use it in automatic mode and let it tell me what my manual tuner settings are for the given frequency, as well as make sure I'm within my band privileges.
 
-This has been tested on Linux using hamlib 3.0.1 and a Yaesu FT-450AT.  As far as I know everything in this script should apply to nearly any radio with hamlib support.  The only exceptions I can think of is if your radio does not have a B VFO or does not adjust the frequency based on the mode.  This script tries to automate as much as possible without interfering with usage but it might still have quirks or behave differently than you expect.  Suggestions, bug reports, or pull requests are welcome!
+This has been tested on Linux using hamlib 3.0.1 and 3.1 and a Yaesu FT-450AT.  As far as I know everything in this script should apply to nearly any radio with hamlib support.  The only exceptions I can think of is if your radio does not have a B VFO or does not adjust the frequency based on the mode.  This script tries to automate as much as possible without interfering with usage but it might still have quirks or behave differently than you expect.  Suggestions, bug reports, or pull requests are welcome!
 
 This script has the US Band Plan preconfigured as of 12/2015, but I do not have plans to input any other country band plans into the script.  I will be happy to take patches or pull requests to add this information, so if you're interested in adding the band plan for your country please let me know if you have any questions on how to add the information and how to send me patches or pull requests so it can get added into the repository.
 
@@ -28,14 +28,16 @@ The prompt is based on the mode (manual or automatic) and has some dynamic text 
 
 #### Auto mode
 
-(C 2.8 -2.8) (Auto mode)
-14076.00/-29/USB/A/U
+(C 2.8 -2.8)  
+(Auto mode) (20M)  
+14076.00/-29/USB/35w/A/U  
 
-This indicates the radio is on 14.076mhz, signal strength is -29, USB, VFO A, and Unlocked.  My tuner setting for this band is Inductor C, Antenna 2.8, Antenna -2.8 (yes, tuning 20m is goofy for me for right now).  This information is updated about once a second, so if changing frequency all of this updates in basically real time, including if you go out of band it displays a warning, or if different tuner settings are set for a different part of the band, etc.
+This indicates the radio is on 14.076mhz, signal strength is -29, USB, set to 35 watts, VFO A, and Unlocked.  My tuner setting for this band is Inductor C, Antenna 2.8, Antenna -2.8 (yes, tuning 20m is goofy for me for right now).  This information is updated about once a second, so if changing frequency all of this updates in basically real time, including if you go out of band it displays a warning, or if different tuner settings are set for a different part of the band, etc.
 
 #### Manual mode
 
-(10138.00/-30/USB/A/U) (G 2.8 4.0): 
+(G 2.8 4.0) (30M)  
+(10138.00/-30/USB/35w/A/U):  
 
 Manual mode basically has the same information, except it does not update in real time, instead it's accepting input to change settings.  Each time you hit enter, it updates the prompt.
 
@@ -44,47 +46,47 @@ Manual mode basically has the same information, except it does not update in rea
 The default mode when launched is manual mode, which allows you to control the radio via simple commands.  Each of these are input and you hit enter, like any command line.
 
  * auto
-  * Switch to Automatic mode
+   * Switch to Automatic mode
  * f####
-  * Switch to frequency in kHz, ie:  f28450
-  * You can combine commands, such as f28450ub will set VFO B to Upper Side Band, frequency 28450.
-  * You may also just type 28450, but cannot combine this with any other commands
-  * If you want to input a sub-khz frequency, such as 28.2035Mhz, you must put a period in, such as 28.2035 or 28203.5
+   * Switch to frequency in kHz, ie:  f28450
+   * You can combine commands, such as f28450ub will set VFO B to Upper Side Band, frequency 28450.
+   * You may also just type 28450, but cannot combine this with any other commands
+   * If you want to input a sub-khz frequency, such as 28.2035Mhz, you must put a period in, such as 28.2035 or 28203.5
  * chan name
-  * Switch to the named channel which is defined in %freqnames
+   * Switch to the named channel which is defined in %freqnames
  * u/l
-  * Switch to Upper/Lower Side Band
+   * Switch to Upper/Lower Side Band
  * c
-  * Switch to CW
+   * Switch to CW
  * am
-  * Switch to AM
+   * Switch to AM
  * fm
-  * Switch to FM
+   * Switch to FM
  * d/du/dl
-  * Switch to DATA mode, d/du are USB, dl is LSB
+   * Switch to DATA mode, d/du are USB, dl is LSB
  * a/b
-  * Switch to VFO A/B
+   * Switch to VFO A/B
  * r
-  * Revert to last freq/mode
+   * Revert to last freq/mode
  * q
-  * Exit
+   * Exit
  * power
-  * Set the power on the radio if possible
+   * Set the power on the radio if possible
  * note
-  * Write a note about the current frequency into a note file for reference later
+   * Write a note about the current frequency into a note file for reference later
  * lock
-  * Lock to current frequency and mode
-  * This is software lock; does not set Lock setting on radio, just keeps the radio at current settings
+   * Lock to current frequency and mode
+   * This is software lock; does not set Lock setting on radio, just keeps the radio at current settings
  * unlock
-  * Unlock
+   * Unlock
  * s####-####
-  * Scan a range of frequencies, ie:  s7100-7300
+   * Scan a range of frequencies, ie:  s7100-7300
  * !
-  * Repeat last command
+   * Repeat last command
  * ?
-  * Help
+   * Help
  * ??
-  * Automatic mode help
+   * Automatic mode help
 
 ### Automatic mode
 
@@ -99,21 +101,21 @@ You can control if the script automatically switches between CW and Phone modes 
 Automatic mode shows in real-time your radio settings and extra information, but also adds keyboard commands to change frequency in various increments and allow allows band scans.  These commands you just type the letter, such as l (lowercase L) and it immediately takes effect.
 
  * l/u
-  * Lock/Unlock frequency/mode
+   * Lock/Unlock frequency/mode
  * Cursor left/right
-  * Change frequency +/- 10hz
+   * Change frequency +/- 10hz
  * Cursor up/down
-  * Change frequency +/- 1khz
+   * Change frequency +/- 1khz
  * Page up/down
-  * Change frequency +/- 5khz
+   * Change frequency +/- 5khz
  * Home up/down
-  * Change frequency +/- 10khz
+   * Change frequency +/- 10khz
  * Insert/Delete
-  * Scan up/down
+   * Scan up/down
  * q
-  * Exit back to Manual mode
+   * Exit back to Manual mode
  * Q
-  * Exit script
+   * Exit script
 
 ### Frequency changes
 
@@ -122,9 +124,9 @@ When changing frequencies in manual mode, the script will automatically switch t
 In manual mode, you may combine multiple commands into one, such as:
 
  * f7188ub
-  * Move to 7188kHz USB on VFO B
-  * By default, it would set the current VFO to the given frequency but with the 'b' token this forces it to set VFO B
-  * Because the token 'u' was specified, it will use USB even though 7188 would normally be LSB
+   * Move to 7188kHz USB on VFO B
+   * By default, it would set the current VFO to the given frequency but with the 'b' token this forces it to set VFO B
+   * Because the token 'u' was specified, it will use USB even though 7188 would normally be LSB
 
 The script attempts to make a reasonable guess as to what frequency is intended based on input, such as 7200 or 7.200 or 7,200 are all assumed to be 7200kHz.  In order to input sub-khz frequencies, you must input with a separator, such as 28.2033 or 28203.3 would both be assumed to be 28203.3kHz.
 
@@ -197,46 +199,46 @@ You may specify **_auto_** as the first command line argument to go directly int
  * Disable tx out of privs/band, etc (if possible in hamlib)
  * Real radio lock mode, not software emulated mode (if possible in hamlib)
  * Do something with data frequency allocation info
-  * Possibly able to switch to cw or data mode, even though these generally overlap
+   * Possibly able to switch to cw or data mode, even though these generally overlap
  * Macros
-  * It would be nice if I could set PMS Lower 1 and PMS Upper 1 and start scanning PMS 1
+   * It would be nice if I could set PMS Lower 1 and PMS Upper 1 and start scanning PMS 1
  * Load, modify, and save configuration
-  * Modifying would be limited to simple variables, not complex ones like band privileges.
+   * Modifying would be limited to simple variables, not complex ones like band privileges.
  * Handle FM a little better, right now mode change isn't made if >10mhz and radio mode is FM to fix FM memories getting flipped to USB.
 
 ### Known Bugs/Limitations
 
  * Still going +/- 700hz sometimes when manually spinning VFO across voice/cw modes
-  * Need to identify why, I've seen this a few times when $allmodeset is enabled
+   * Need to identify why, I've seen this a few times when $allmodeset is enabled
  * Changing VFO a/b/memory in manual input mode sometimes doesn't know last mode since it hasn't read the radio since the last time enter was pressed.
-  * Manual mode doesn't read the radio info until enter is hit, so it can "miss" things, not sure what I can do here
+   * Manual mode doesn't read the radio info until enter is hit, so it can "miss" things, not sure what I can do here
  * Need to figure out how to send more hamlib commands
-  * Arbitrary cat control which isn't directly in hamlib, maybe other things
+   * Arbitrary cat control which isn't directly in hamlib, maybe other things
 
 ### Troubleshooting
 
   * Perl Issues
-   * Check your dependencies
-   * Your distribution most likely packages the requirements, look for them there before going to CPAN or other repositories
+    * Check your dependencies
+    * Your distribution most likely packages the requirements, look for them there before going to CPAN or other repositories
   * Command Not Found type errors when running the scripts
-   * Run script directly with perl, or set the script as executable.
-   * Note that the script might not be in your executable path, so even if set executable you may have to run it with the full or relative path
+    * Run script directly with perl, or set the script as executable.
+    * Note that the script might not be in your executable path, so even if set executable you may have to run it with the full or relative path
   * Connection errors or the script exits automatically
-   * If there are too many failed attempts to communicate with rigctld the script will exit
-   * I've found rigctld sometimes exits for seemingly no reason; I personally have it in cron job so it stays running or restarts itself
+    * If there are too many failed attempts to communicate with rigctld the script will exit
+    * I've found rigctld sometimes exits for seemingly no reason; I personally have it in cron job so it stays running or restarts itself
 
 ### Dependencies
 
   * Radio which supports CAT control and is supported by hamlib
 
   * rigctld
-   * rigctld must be running and configured to talk to your radio.  If the host or port is different than default you must set this at the top of the script
+    * rigctld must be running and configured to talk to your radio.  If the host or port is different than default you must set this at the top of the script
 
   * hamlib
-   * Specific version requirements unknown; I am using 3.0.1
+    * Specific version requirements unknown; I am using 3.0.1
 
   * Perl modules
-   * Term::ReadKey
+    * Term::ReadKey
 
   * Optional Perl modules
-   * Term::ANSIColor
+    * Term::ANSIColor
